@@ -82,6 +82,7 @@ Run these from the **repo root** unless noted otherwise.
 |---|---|
 | Client | http://localhost:5173 |
 | API server | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/api/docs |
 | PostgreSQL | `localhost:5432` |
 
 ---
@@ -108,16 +109,18 @@ The server reads its config from `packages/server/.env`. The first run of `start
 
 Base URL: `http://localhost:8000/api`
 
+> **Interactive docs** — the full API is browsable and testable via Swagger UI at **http://localhost:8000/api/docs** (server must be running). The spec lives in `packages/server/src/swagger.ts`.
+
 ### Auth endpoints
 
-| Method | Path | Body | Auth | Description |
-|---|---|---|---|---|
-| `POST` | `/auth/signup` | `{ email, password }` | No | Create a new account |
-| `POST` | `/auth/login` | `{ email, password }` | No | Sign in to an existing account |
-| `POST` | `/auth/logout` | — | No | Invalidate the current refresh token |
-| `POST` | `/auth/refresh` | — | No (reads cookie) | Exchange refresh token for a new access token |
-| `GET` | `/auth/me` | — | Yes | Return the current user's profile |
-| `GET` | `/health` | — | No | Health check |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/signup` | No | Create a new account |
+| `POST` | `/auth/login` | No | Sign in to an existing account |
+| `POST` | `/auth/logout` | No | Invalidate the current refresh token |
+| `POST` | `/auth/refresh` | No (reads cookie) | Exchange refresh token for a new access token |
+| `GET` | `/auth/me` | Yes | Return the current user's profile |
+| `GET` | `/health` | No | Health check |
 
 #### Protected routes
 
@@ -137,14 +140,35 @@ Authorization: Bearer <accessToken>
 ```bash
 curl -X POST http://localhost:8000/api/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{ "email": "you@example.com", "password": "securepassword" }'
+  -d '{
+    "email": "you@example.com",
+    "password": "securepassword",
+    "role": "LEARNER",
+    "department": "Engineering",
+    "experienceLevel": "MID",
+    "addresses": []
+  }'
 ```
+
+`role` must be `"LEARNER"` or `"MANAGER"`. When `role` is `"MANAGER"`, `teamName` is also required.
+
+`experienceLevel` must be `"JUNIOR"`, `"MID"`, or `"SENIOR"`.
+
+`addresses` is optional. Each address requires: `label`, `street1`, `city`, `state`, `zipCode`, `country`. `street2` is optional.
 
 Response:
 ```json
 {
   "accessToken": "<jwt>",
-  "user": { "id": "...", "email": "you@example.com" }
+  "user": {
+    "id": "...",
+    "email": "you@example.com",
+    "role": "LEARNER",
+    "department": "Engineering",
+    "experienceLevel": "MID",
+    "teamName": null,
+    "addresses": []
+  }
 }
 ```
 
@@ -152,10 +176,18 @@ Response:
 
 ## Database
 
-The schema lives in `packages/server/prisma/schema.prisma`. Two models are defined out of the box:
+The schema lives in `packages/server/prisma/schema.prisma`.
 
-- **User** — stores email and hashed password
+### Models
+
+- **User** — email, hashed password, role, department, experience level, optional team name
+- **Address** — one-to-many with User; each entry has a user-defined label and full address fields
 - **RefreshToken** — tracks issued refresh tokens for revocation
+
+### Enums
+
+- **Role** — `LEARNER` | `MANAGER`
+- **ExperienceLevel** — `JUNIOR` | `MID` | `SENIOR`
 
 After changing the schema, run:
 

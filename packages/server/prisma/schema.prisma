@@ -7,13 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  LEARNER
+  MANAGER
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  passwordHash String
-  createdAt    DateTime       @default(now())
-  tokens       RefreshToken[]
-  addresses    Address[]
+  id              String          @id @default(cuid())
+  email           String          @unique
+  passwordHash    String
+  role            Role
+  department      String
+  experienceLevel ExperienceLevel
+  teamName        String?
+  createdAt       DateTime        @default(now())
+  tokens          RefreshToken[]
+  addresses       Address[]
 }
 
 model Address {

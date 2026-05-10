@@ -38,10 +38,14 @@ export const swaggerOptions: Options = {
         User: {
           type: "object",
           properties: {
-            id:        { type: "string" },
-            email:     { type: "string", format: "email" },
-            createdAt: { type: "string", format: "date-time" },
-            addresses: { type: "array", items: { $ref: "#/components/schemas/Address" } },
+            id:              { type: "string" },
+            email:           { type: "string", format: "email" },
+            role:            { type: "string", enum: ["LEARNER", "MANAGER"] },
+            department:      { type: "string", example: "Engineering" },
+            experienceLevel: { type: "string", enum: ["JUNIOR", "MID", "SENIOR"] },
+            teamName:        { type: "string", nullable: true, example: "Platform Team" },
+            createdAt:       { type: "string", format: "date-time" },
+            addresses:       { type: "array", items: { $ref: "#/components/schemas/Address" } },
           },
         },
       },
@@ -73,16 +77,20 @@ export const swaggerOptions: Options = {
               "application/json": {
                 schema: {
                   type: "object",
-                  required: ["email", "password"],
                   properties: {
-                    email:     { type: "string", format: "email", example: "user@example.com" },
-                    password:  { type: "string", minLength: 8, example: "secret123" },
+                    email:           { type: "string", format: "email", example: "user@example.com" },
+                    password:        { type: "string", minLength: 8, example: "secret123" },
+                    role:            { type: "string", enum: ["LEARNER", "MANAGER"] },
+                    department:      { type: "string", example: "Engineering" },
+                    experienceLevel: { type: "string", enum: ["JUNIOR", "MID", "SENIOR"] },
+                    teamName:        { type: "string", description: "Required when role is MANAGER", example: "Platform Team" },
                     addresses: {
                       type: "array",
                       items: { $ref: "#/components/schemas/AddressInput" },
                       description: "Optional list of addresses to attach at signup",
                     },
                   },
+                  required: ["email", "password", "role", "department", "experienceLevel"],
                 },
               },
             },

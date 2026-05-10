@@ -44,11 +44,20 @@ const addressSchema = z.object({
   country: z.string().min(1).max(100),
 });
 
-const signupSchema = z.object({
-  email:     z.string().email(),
-  password:  z.string().min(8),
-  addresses: z.array(addressSchema).optional().default([]),
-});
+const signupSchema = z
+  .object({
+    email:           z.string().email(),
+    password:        z.string().min(8),
+    role:            z.enum(["LEARNER", "MANAGER"]),
+    department:      z.string().min(1).max(100),
+    experienceLevel: z.enum(["JUNIOR", "MID", "SENIOR"]),
+    teamName:        z.string().min(1).max(100).optional(),
+    addresses:       z.array(addressSchema).optional().default([]),
+  })
+  .refine(data => data.role !== "MANAGER" || !!data.teamName?.trim(), {
+    message: "Team name is required for managers",
+    path: ["teamName"],
+  });
 
 export async function signup(req: Request, res: Response): Promise<void> {
   const result = signupSchema.safeParse(req.body);
@@ -57,7 +66,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { email, password, addresses } = result.data;
+  const { email, password, role, department, experienceLevel, teamName, addresses } = result.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -70,6 +79,10 @@ export async function signup(req: Request, res: Response): Promise<void> {
     data: {
       email,
       passwordHash,
+      role,
+      department,
+      experienceLevel,
+      teamName: teamName ?? null,
       addresses: { create: addresses },
     },
     include: { addresses: true },
@@ -86,7 +99,18 @@ export async function signup(req: Request, res: Response): Promise<void> {
   });
 
   res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
-  res.status(201).json({ accessToken, user: { id: user.id, email: user.email, addresses: user.addresses } });
+  res.status(201).json({
+    accessToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+      experienceLevel: user.experienceLevel,
+      teamName: user.teamName,
+      addresses: user.addresses,
+    },
+  });
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -177,7 +201,16 @@ export async function refresh(req: Request, res: Response): Promise<void> {
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.sub },
-    select: { id: true, email: true, createdAt: true, addresses: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      department: true,
+      experienceLevel: true,
+      teamName: true,
+      createdAt: true,
+      addresses: true,
+    },
   });
 
   if (!user) {
