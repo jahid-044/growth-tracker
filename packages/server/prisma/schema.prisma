@@ -13,6 +13,21 @@ model User {
   passwordHash String
   createdAt    DateTime       @default(now())
   tokens       RefreshToken[]
+  addresses    Address[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  street1   String
+  street2   String?
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  createdAt DateTime @default(now())
 }
 
 model RefreshToken {

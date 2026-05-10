@@ -34,14 +34,30 @@ const credentialsSchema = z.object({
   password: z.string().min(8),
 });
 
+const addressSchema = z.object({
+  label:   z.string().min(1).max(100),
+  street1: z.string().min(1).max(200),
+  street2: z.string().max(200).optional(),
+  city:    z.string().min(1).max(100),
+  state:   z.string().min(1).max(100),
+  zipCode: z.string().min(1).max(20),
+  country: z.string().min(1).max(100),
+});
+
+const signupSchema = z.object({
+  email:     z.string().email(),
+  password:  z.string().min(8),
+  addresses: z.array(addressSchema).optional().default([]),
+});
+
 export async function signup(req: Request, res: Response): Promise<void> {
-  const result = credentialsSchema.safeParse(req.body);
+  const result = signupSchema.safeParse(req.body);
   if (!result.success) {
     res.status(400).json({ message: "Validation error", errors: result.error.flatten().fieldErrors });
     return;
   }
 
-  const { email, password } = result.data;
+  const { email, password, addresses } = result.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -50,7 +66,14 @@ export async function signup(req: Request, res: Response): Promise<void> {
   }
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const user = await prisma.user.create({ data: { email, passwordHash } });
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      addresses: { create: addresses },
+    },
+    include: { addresses: true },
+  });
 
   const { accessToken, refreshToken } = issueTokens(user.id, user.email);
 
@@ -63,7 +86,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
   });
 
   res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
-  res.status(201).json({ accessToken, user: { id: user.id, email: user.email } });
+  res.status(201).json({ accessToken, user: { id: user.id, email: user.email, addresses: user.addresses } });
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -154,7 +177,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.sub },
-    select: { id: true, email: true, createdAt: true },
+    select: { id: true, email: true, createdAt: true, addresses: true },
   });
 
   if (!user) {
