@@ -6,11 +6,30 @@ Use the Swagger UI at **http://localhost:8000/api/docs** to explore the API cont
 
 ---
 
+## Testing your implementation
+
+A test suite in `packages/client/src/__tests__/Signup.test.tsx` verifies that your form works correctly. Run it with:
+
+```bash
+pnpm --filter dsissue-react test
+```
+
+The tests use `data-testid` attributes to find elements. You **must** add these attributes to the matching elements — without them the tests cannot find your components. Every required attribute is listed in the section it belongs to below.
+
+---
+
 ## 1. Email and Password — Basic Controlled Inputs
 
 **Fields:** `email`, `password`
 
 The foundation of every React form. A controlled input means the input's value is always driven by React state — the component, not the browser, owns the truth.
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `email-input` | `<input type="email">` |
+| `password-input` | `<input type="password">` |
 
 **What to explore:**
 - The difference between controlled (`value` + `onChange`) and uncontrolled (`ref`) inputs, and when you'd choose each
@@ -19,25 +38,36 @@ The foundation of every React form. A controlled input means the input's value i
 
 ---
 
-## 2. Password Strength Indicator — Real-Time Derived State
+## 2. Password Validation Rules — Real-Time Derived State
 
 **Field:** derived from `password`
 
-The strength indicator (Weak / Fair / Good / Strong) is not stored in state — it is computed from the password on every render. This is one of the most important React patterns to understand: not everything needs to be state.
+Show a checklist of three rules below the password field. Each rule updates live as the user types — it is either met or unmet. The checked/unchecked state is **not stored in state** — it is computed from the password value on every render.
+
+**Rules to implement:**
+
+| Rule | Met when… |
+|---|---|
+| At least 8 characters | `password.length >= 8` |
+| At least one capital letter | `/[A-Z]/.test(password)` |
+| At least one special character | `/[^A-Za-z0-9]/.test(password)` |
+
+**Required `data-testid` attributes:**
+
+Each rule element must also carry a `data-met` attribute set to `"true"` or `"false"`:
+
+```html
+<li data-testid="password-rule-length" data-met="false">At least 8 characters</li>
+<li data-testid="password-rule-upper"  data-met="false">At least one capital letter</li>
+<li data-testid="password-rule-special" data-met="false">At least one special character</li>
+```
+
+When the rule is satisfied, flip the attribute to `data-met="true"` and apply a visual style (e.g. green text + tick icon).
 
 **What to explore:**
 - The distinction between state and values derived from state — and why storing derived values in state creates bugs
-- How to reflect real-time feedback (colour, label, progress bar) without adding extra event handlers
-- Separating the scoring logic from the JSX so the function can be reasoned about and tested in isolation
-
-**Scoring reference:**
-
-| Score | Label | Conditions |
-|---|---|---|
-| 1 | Weak | Length ≥ 8 only |
-| 2 | Fair | + uppercase or digit |
-| 3 | Good | + uppercase and digit |
-| 4 | Strong | + special character |
+- How to reflect real-time feedback without adding extra event handlers
+- Separating the rule-checking logic from the JSX so it can be reasoned about and tested in isolation
 
 ---
 
@@ -45,7 +75,16 @@ The strength indicator (Weak / Fair / Good / Strong) is not stored in state — 
 
 **Field:** `role` (`LEARNER` | `MANAGER`)
 
-Two mutually exclusive options. Native `<input type="radio">` is the semantically correct element, but it is almost always styled to look like something else — a toggle, pill selector, or tab strip. This is where you learn to style around the native input while keeping it accessible.
+Two mutually exclusive options styled as a toggle — not the default browser radio appearance.
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `role-learner` | `<input type="radio">` for LEARNER |
+| `role-manager` | `<input type="radio">` for MANAGER |
+
+Place these on the `<input>` element itself, even if it is visually hidden inside a `<label>`.
 
 **What to explore:**
 - Why wrapping an input in a `<label>` makes the entire area clickable without any JavaScript
@@ -58,11 +97,17 @@ Two mutually exclusive options. Native `<input type="radio">` is the semanticall
 
 **Field:** `teamName` (visible only when `role` is `MANAGER`)
 
-This is the most important pattern in the form. Real forms constantly show or hide fields based on earlier answers — a billing address when "ship to different address" is ticked, extra fields when a specific payment method is chosen. The team name field only makes sense for a Manager, so it should only appear when that role is selected.
+This is the most important pattern in the form. Real forms constantly show or hide fields based on earlier answers.
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `team-name-input` | `<input>` for team name — **only rendered when role is MANAGER** |
 
 **What to explore:**
-- The difference between conditionally rendering a field (unmounting it) vs hiding it with CSS — they behave differently when it comes to preserving state
-- Why state for a hidden field should be cleared when the field disappears, so it does not get submitted with stale data
+- The difference between conditionally rendering a field (unmounting it from the DOM) vs hiding it with CSS — they behave differently when it comes to preserving state
+- Why state for a hidden field should be **cleared** when the field disappears, so it does not get submitted with stale data
 - How the backend enforces the same rule independently — the frontend condition is a UX guard, not the only safeguard
 
 ---
@@ -71,9 +116,15 @@ This is the most important pattern in the form. Real forms constantly show or hi
 
 **Field:** `department`
 
-A fixed list of options the user picks from. Simple on the surface, but there are real decisions to make around the default/empty state, placeholder text, and styling limitations of the native `<select>` element.
+A fixed list of options the user picks from.
 
 **Valid values:** `Engineering`, `Product`, `Design`, `Marketing`, `Operations`, `HR`, `Other`
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `department-select` | `<select>` |
 
 **What to explore:**
 - How to show a "please select" prompt that is not itself a valid choice (`value=""` + `disabled`)
@@ -86,7 +137,15 @@ A fixed list of options the user picks from. Simple on the surface, but there ar
 
 **Field:** `experienceLevel` (`JUNIOR` | `MID` | `SENIOR`)
 
-A radio group where each option has a label and a short description below it. The interaction is the same as the role selector, but the richer option content makes it a distinct challenge.
+A radio group where each option has a label and a short description below it.
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `experience-junior` | `<input type="radio">` for JUNIOR |
+| `experience-mid` | `<input type="radio">` for MID |
+| `experience-senior` | `<input type="radio">` for SENIOR |
 
 **What to explore:**
 - Rendering a list of options from a data array rather than copy-pasting JSX for each one
@@ -99,20 +158,34 @@ A radio group where each option has a label and a short description below it. Th
 
 **Fields:** `addresses[]` — each entry has `label`, `street1`, `street2` (optional), `city`, `state`, `zipCode`, `country`
 
-Users can add zero or more addresses. Each address is an object inside a state array. This pattern — a list where items can be added, removed, and individually edited — appears constantly in real apps: cart items, tags, team members, uploaded files.
+Users can add zero or more addresses. Each address is an object inside a state array.
+
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `add-address-btn` | The "Add an address" button |
+| `address-group` | The wrapper element for **each** address group |
+| `remove-address-btn` | The remove button **inside** each address group |
+| `address-label-input` | The label `<input>` **inside** each address group |
+| `address-street1-input` | The street1 `<input>` **inside** each address group |
+| `address-city-input` | The city `<input>` **inside** each address group |
+| `address-state-input` | The state `<input>` **inside** each address group |
+| `address-zip-input` | The ZIP `<input>` **inside** each address group |
+| `address-country-input` | The country `<input>` **inside** each address group |
+
+The attributes on inputs inside a group do **not** need to be globally unique — the tests use `within(group)` to scope lookups to a specific group.
 
 **What to explore:**
 - Why you must never mutate state arrays directly, and how to add, remove, and update items immutably
 - Using a client-generated ID (e.g. `crypto.randomUUID()`) as the React `key` for each item — why the array index is a poor choice when items can be removed or reordered
-- Stripping client-only fields (IDs, UI flags) before sending the data to the API
+- Stripping client-only fields (`id`, `isOpen`) before sending the data to the API
 
 ---
 
 ## 8. Collapsible Address Groups — Expand / Collapse
 
 **Interaction:** each address group can be independently collapsed and expanded via a header toggle
-
-Once a user adds multiple addresses the form gets long. Collapsing completed sections keeps it manageable. This pattern — per-item open/closed state stored alongside the item data — is the foundation of accordions, expandable table rows, and nested lists.
 
 **What to explore:**
 - Where to store the open/closed state: per-item inside the array, or separately — and why co-locating it with the item data is often cleaner
@@ -123,12 +196,19 @@ Once a user adds multiple addresses the form gets long. Collapsing completed sec
 
 ## Submitting the Form
 
+**Required `data-testid` attributes:**
+
+| Attribute | Element |
+|---|---|
+| `submit-btn` | The submit `<button>` |
+| `error-message` | The element that shows API error text |
+
 When the user submits:
 
 1. Prevent the default browser form submission with `e.preventDefault()`
-2. Sanitise the payload — strip any client-only fields (`id`, `isOpen`) that should not reach the server
+2. Sanitise the payload — strip client-only fields (`id`, `isOpen`) from addresses; omit `teamName` entirely when role is `LEARNER`
 3. `POST` to `http://localhost:8000/api/auth/signup` with `Content-Type: application/json` and `credentials: 'include'` so the refresh token cookie set by the server is accepted by the browser
-4. Handle success: store the access token returned in the response, then navigate to `/`
-5. Handle errors: display the `message` field from the API response
+4. Handle success: store `accessToken` in `localStorage`, then call `navigate('/')`
+5. Handle errors: display the `message` field from the API response in the `error-message` element
 
 Check **http://localhost:8000/api/docs** for the exact shape of the request body and the possible error responses before you start wiring up the fetch call.
