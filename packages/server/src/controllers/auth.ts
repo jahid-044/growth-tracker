@@ -40,19 +40,21 @@ const addressSchema = z.object({
   street1: z.string().min(1).max(200),
   street2: z.string().max(200).optional(),
   city:    z.string().min(1).max(100),
-  state:   z.string().min(1).max(100),
-  zipCode: z.string().min(1).max(20),
-  country: z.string().min(1).max(100),
+  zipCode: z.number().int().positive(),
 });
+
+const DEPARTMENTS = ["Engineering", "Product", "Design", "Marketing", "Operations", "HR", "Other"] as const;
 
 const signupSchema = z
   .object({
     email:           z.string().email(),
     password:        z.string().min(8),
     role:            z.enum(["LEARNER", "MANAGER"]),
-    department:      z.string().min(1).max(100),
+    department:      z.enum(DEPARTMENTS),
     experienceLevel: z.enum(["JUNIOR", "MID", "SENIOR"]),
     teamName:        z.string().min(1).max(100).optional(),
+    bio:             z.string().max(250).optional(),
+    birthdate:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD)"),
     addresses:       z.array(addressSchema).optional().default([]),
   })
   .refine(data => data.role !== "MANAGER" || !!data.teamName?.trim(), {
@@ -67,7 +69,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { email, password, role, department, experienceLevel, teamName, addresses } = result.data;
+  const { email, password, role, department, experienceLevel, teamName, bio, birthdate, addresses } = result.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -84,6 +86,8 @@ export async function signup(req: Request, res: Response): Promise<void> {
       department,
       experienceLevel,
       teamName: teamName ?? null,
+      bio: bio ?? null,
+      birthdate,
       addresses: { create: addresses },
     },
     include: { addresses: true },
@@ -103,13 +107,15 @@ export async function signup(req: Request, res: Response): Promise<void> {
   res.status(201).json({
     accessToken,
     user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      department: user.department,
+      id:              user.id,
+      email:           user.email,
+      role:            user.role,
+      department:      user.department,
       experienceLevel: user.experienceLevel,
-      teamName: user.teamName,
-      addresses: user.addresses,
+      teamName:        user.teamName,
+      bio:             user.bio,
+      birthdate:       user.birthdate,
+      addresses:       user.addresses,
     },
   });
 }
@@ -203,14 +209,16 @@ export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.sub },
     select: {
-      id: true,
-      email: true,
-      role: true,
-      department: true,
+      id:              true,
+      email:           true,
+      role:            true,
+      department:      true,
       experienceLevel: true,
-      teamName: true,
-      createdAt: true,
-      addresses: true,
+      teamName:        true,
+      bio:             true,
+      birthdate:       true,
+      createdAt:       true,
+      addresses:       true,
     },
   });
 
@@ -220,4 +228,22 @@ export async function me(req: Request, res: Response): Promise<void> {
   }
 
   res.json({ user });
+}
+
+export async function checkEmail(req: Request, res: Response): Promise<void> {
+  const email = req.query.email as string | undefined;
+
+  if (!email) {
+    res.status(400).json({ message: "email query parameter is required" });
+    return;
+  }
+
+  const parsed = z.string().email().safeParse(email);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid email address" });
+    return;
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email: parsed.data }, select: { id: true } });
+  res.json({ available: existing === null });
 }

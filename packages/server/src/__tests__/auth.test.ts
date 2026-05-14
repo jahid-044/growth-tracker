@@ -35,6 +35,7 @@ const basePayload = {
   role: "LEARNER" as const,
   department: "Engineering",
   experienceLevel: "MID" as const,
+  birthdate: "1995-06-15",
 };
 
 const managerPayload = {
@@ -44,6 +45,7 @@ const managerPayload = {
   department: "Product",
   experienceLevel: "SENIOR" as const,
   teamName: "Platform Team",
+  birthdate: "1990-03-22",
 };
 
 async function signupAndGetToken(payload = basePayload) {
@@ -75,6 +77,7 @@ describe("POST /api/auth/signup", () => {
       department: "Engineering",
       experienceLevel: "MID",
       teamName: null,
+      birthdate: "1995-06-15",
       addresses: [],
     });
     expect(res.body.user.passwordHash).toBeUndefined();
@@ -94,8 +97,8 @@ describe("POST /api/auth/signup", () => {
     const payload = {
       ...basePayload,
       addresses: [
-        { label: "Home", street1: "1 Main St", city: "New York", state: "NY", zipCode: "10001", country: "US" },
-        { label: "Office", street1: "2 Work Ave", city: "Brooklyn", state: "NY", zipCode: "11201", country: "US" },
+        { label: "Home", street1: "1 Main St", city: "New York", zipCode: 10001 },
+        { label: "Office", street1: "2 Work Ave", city: "Brooklyn", zipCode: 11201 },
       ],
     };
 
@@ -105,6 +108,15 @@ describe("POST /api/auth/signup", () => {
     expect(res.body.user.addresses).toHaveLength(2);
     expect(res.body.user.addresses[0].label).toBe("Home");
     expect(res.body.user.addresses[1].label).toBe("Office");
+  });
+
+  it("stores bio when provided", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ ...basePayload, bio: "I love learning React." });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.bio).toBe("I love learning React.");
   });
 
   it("returns 409 when email is already in use", async () => {
@@ -159,6 +171,24 @@ describe("POST /api/auth/signup", () => {
     expect(res.body.errors.experienceLevel).toBeDefined();
   });
 
+  it("returns 400 for invalid department value", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ ...basePayload, department: "Finance" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.department).toBeDefined();
+  });
+
+  it("returns 400 for invalid birthdate format", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ ...basePayload, birthdate: "15-06-1995" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.birthdate).toBeDefined();
+  });
+
   it("does not expose passwordHash in the response", async () => {
     const res = await request(app).post("/api/auth/signup").send(basePayload);
     expect(res.body.user.passwordHash).toBeUndefined();
@@ -208,7 +238,7 @@ describe("GET /api/auth/me", () => {
     const payload = {
       ...basePayload,
       addresses: [
-        { label: "Home", street1: "1 Main St", city: "NYC", state: "NY", zipCode: "10001", country: "US" },
+        { label: "Home", street1: "1 Main St", city: "NYC", zipCode: 10001 },
       ],
     };
     const token = await signupAndGetToken(payload);
@@ -223,6 +253,7 @@ describe("GET /api/auth/me", () => {
       role: "LEARNER",
       department: "Engineering",
       experienceLevel: "MID",
+      birthdate: "1995-06-15",
     });
     expect(res.body.user.addresses).toHaveLength(1);
     expect(res.body.user.addresses[0].label).toBe("Home");
@@ -238,5 +269,44 @@ describe("GET /api/auth/me", () => {
       .get("/api/auth/me")
       .set("Authorization", "Bearer not.a.valid.token");
     expect(res.status).toBe(401);
+  });
+});
+
+// ── Check Email ───────────────────────────────────────────────────────────────
+
+describe("GET /api/auth/check-email", () => {
+  it("returns available: true for an unknown email", async () => {
+    const res = await request(app)
+      .get("/api/auth/check-email")
+      .query({ email: email("unknown") });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ available: true });
+  });
+
+  it("returns available: false for a registered email", async () => {
+    await request(app).post("/api/auth/signup").send(basePayload);
+
+    const res = await request(app)
+      .get("/api/auth/check-email")
+      .query({ email: basePayload.email });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ available: false });
+  });
+
+  it("returns 400 when email param is missing", async () => {
+    const res = await request(app).get("/api/auth/check-email");
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBeDefined();
+  });
+
+  it("returns 400 for an invalid email format", async () => {
+    const res = await request(app)
+      .get("/api/auth/check-email")
+      .query({ email: "not-an-email" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBeDefined();
   });
 });

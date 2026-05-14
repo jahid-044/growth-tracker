@@ -11,15 +11,13 @@ export const swaggerOptions: Options = {
       schemas: {
         AddressInput: {
           type: "object",
-          required: ["label", "street1", "city", "state", "zipCode", "country"],
+          required: ["label", "street1", "city", "zipCode"],
           properties: {
             label:   { type: "string", example: "Home" },
             street1: { type: "string", example: "123 Main St" },
             street2: { type: "string", nullable: true, example: "Apt 4B" },
             city:    { type: "string", example: "New York" },
-            state:   { type: "string", example: "NY" },
-            zipCode: { type: "string", example: "10001" },
-            country: { type: "string", example: "US" },
+            zipCode: { type: "integer", example: 10001 },
           },
         },
         Address: {
@@ -41,9 +39,14 @@ export const swaggerOptions: Options = {
             id:              { type: "string" },
             email:           { type: "string", format: "email" },
             role:            { type: "string", enum: ["LEARNER", "MANAGER"] },
-            department:      { type: "string", example: "Engineering" },
+            department: {
+              type: "string",
+              enum: ["Engineering", "Product", "Design", "Marketing", "Operations", "HR", "Other"],
+            },
             experienceLevel: { type: "string", enum: ["JUNIOR", "MID", "SENIOR"] },
             teamName:        { type: "string", nullable: true, example: "Platform Team" },
+            bio:             { type: "string", nullable: true, maxLength: 250, example: "I love learning React." },
+            birthdate:       { type: "string", format: "date", example: "1995-06-15" },
             createdAt:       { type: "string", format: "date-time" },
             addresses:       { type: "array", items: { $ref: "#/components/schemas/Address" } },
           },
@@ -77,20 +80,25 @@ export const swaggerOptions: Options = {
               "application/json": {
                 schema: {
                   type: "object",
+                  required: ["email", "password", "role", "department", "experienceLevel", "birthdate"],
                   properties: {
                     email:           { type: "string", format: "email", example: "user@example.com" },
-                    password:        { type: "string", minLength: 8, example: "secret123" },
+                    password:        { type: "string", minLength: 8, example: "Secret123!" },
                     role:            { type: "string", enum: ["LEARNER", "MANAGER"] },
-                    department:      { type: "string", example: "Engineering" },
+                    department: {
+                      type: "string",
+                      enum: ["Engineering", "Product", "Design", "Marketing", "Operations", "HR", "Other"],
+                    },
                     experienceLevel: { type: "string", enum: ["JUNIOR", "MID", "SENIOR"] },
                     teamName:        { type: "string", description: "Required when role is MANAGER", example: "Platform Team" },
+                    bio:             { type: "string", maxLength: 250, example: "I love learning React." },
+                    birthdate:       { type: "string", format: "date", example: "1995-06-15", description: "YYYY-MM-DD" },
                     addresses: {
                       type: "array",
                       items: { $ref: "#/components/schemas/AddressInput" },
                       description: "Optional list of addresses to attach at signup",
                     },
                   },
-                  required: ["email", "password", "role", "department", "experienceLevel"],
                 },
               },
             },
@@ -128,7 +136,7 @@ export const swaggerOptions: Options = {
                   required: ["email", "password"],
                   properties: {
                     email:    { type: "string", format: "email", example: "user@example.com" },
-                    password: { type: "string", example: "secret123" },
+                    password: { type: "string", example: "Secret123!" },
                   },
                 },
               },
@@ -206,6 +214,35 @@ export const swaggerOptions: Options = {
             },
             "401": { description: "Unauthorized" },
             "404": { description: "User not found" },
+          },
+        },
+      },
+      "/api/auth/check-email": {
+        get: {
+          tags: ["Auth"],
+          summary: "Check whether an email address is available",
+          parameters: [
+            {
+              name: "email",
+              in: "query",
+              required: true,
+              schema: { type: "string", format: "email" },
+              example: "user@example.com",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Availability result",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { available: { type: "boolean" } },
+                  },
+                },
+              },
+            },
+            "400": { description: "Missing or invalid email query parameter" },
           },
         },
       },

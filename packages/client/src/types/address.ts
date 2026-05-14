@@ -3,9 +3,7 @@ export interface AddressInput {
   street1: string;
   street2?: string;
   city: string;
-  state: string;
-  zipCode: string;
-  country: string;
+  zipCode: number;
 }
 
 export interface AddressResponse extends AddressInput {

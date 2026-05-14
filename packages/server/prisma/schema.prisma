@@ -18,14 +18,26 @@ enum ExperienceLevel {
   SENIOR
 }
 
+enum Department {
+  Engineering
+  Product
+  Design
+  Marketing
+  Operations
+  HR
+  Other
+}
+
 model User {
   id              String          @id @default(cuid())
   email           String          @unique
   passwordHash    String
   role            Role
-  department      String
+  department      Department
   experienceLevel ExperienceLevel
   teamName        String?
+  bio             String?
+  birthdate       String
   createdAt       DateTime        @default(now())
   tokens          RefreshToken[]
   addresses       Address[]
@@ -39,9 +51,7 @@ model Address {
   street1   String
   street2   String?
   city      String
-  state     String
-  zipCode   String
-  country   String
+  zipCode   Int
   createdAt DateTime @default(now())
 }
 

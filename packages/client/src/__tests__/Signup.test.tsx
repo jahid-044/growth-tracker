@@ -9,30 +9,33 @@
  * ────────────────────────────────
  * Add these to the matching elements in your implementation:
  *
- *   signup-form          <form> element
- *   email-input          email <input>
- *   password-input       password <input>
- *   password-rule-length <li> for the "8 chars" rule  — data-met="true|false"
- *   password-rule-upper  <li> for the uppercase rule  — data-met="true|false"
- *   password-rule-special<li> for the special-char rule — data-met="true|false"
- *   role-learner         LEARNER radio <input>
- *   role-manager         MANAGER radio <input>
- *   team-name-input      team name <input>  (only rendered when role = MANAGER)
- *   department-select    department <select>
- *   experience-junior    JUNIOR radio <input>
- *   experience-mid       MID   radio <input>
- *   experience-senior    SENIOR radio <input>
- *   add-address-btn      "Add an address" <button>
- *   address-group        wrapper <div> for each address group
- *   remove-address-btn   remove <button> inside each address group
- *   address-label-input  label <input> inside each address group
+ *   signup-form           <form> element
+ *   email-input           email <input>
+ *   password-input        password <input>
+ *   password-rule-length  <li> for the "8 chars" rule  — data-met="true|false"
+ *   password-rule-upper   <li> for the uppercase rule  — data-met="true|false"
+ *   password-rule-special <li> for the special-char rule — data-met="true|false"
+ *   role-learner          LEARNER radio <input>
+ *   role-manager          MANAGER radio <input>
+ *   team-name-input       team name <input>  (only rendered when role = MANAGER)
+ *   department-select     department <select>
+ *   experience-junior     JUNIOR radio <input>
+ *   experience-mid        MID   radio <input>
+ *   experience-senior     SENIOR radio <input>
+ *   bio-input             bio <textarea>
+ *   bio-char-count        live character counter element
+ *   birthdate-year        year <select>
+ *   birthdate-month       month <select>
+ *   birthdate-day         day <select>
+ *   add-address-btn       "Add an address" <button>
+ *   address-group         wrapper <div> for each address group
+ *   remove-address-btn    remove <button> inside each address group
+ *   address-label-input   label <input> inside each address group
  *   address-street1-input street1 <input> inside each address group
- *   address-city-input   city <input> inside each address group
- *   address-state-input  state <input> inside each address group
- *   address-zip-input    zip <input> inside each address group
- *   address-country-input country <input> inside each address group
- *   submit-btn           submit <button>
- *   error-message        error <p> or <div>
+ *   address-city-input    city <input> inside each address group
+ *   address-zip-input     zip <input> inside each address group
+ *   submit-btn            submit <button>
+ *   error-message         error <p> or <div>
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -82,6 +85,9 @@ async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByTestId('email-input'), 'test@company.com');
   await user.type(screen.getByTestId('password-input'), 'Secret123!');
   await user.selectOptions(screen.getByTestId('department-select'), 'Engineering');
+  await user.selectOptions(screen.getByTestId('birthdate-year'), '1995');
+  await user.selectOptions(screen.getByTestId('birthdate-month'), '06');
+  await user.selectOptions(screen.getByTestId('birthdate-day'), '15');
   // role defaults to LEARNER, experience defaults to JUNIOR — no extra clicks needed
 }
 
@@ -137,6 +143,23 @@ describe('Field rendering', () => {
     expect(screen.getByTestId('experience-junior')).toBeInTheDocument();
     expect(screen.getByTestId('experience-mid')).toBeInTheDocument();
     expect(screen.getByTestId('experience-senior')).toBeInTheDocument();
+  });
+
+  it('renders the bio textarea', () => {
+    renderSignup();
+    expect(screen.getByTestId('bio-input')).toBeInTheDocument();
+  });
+
+  it('renders the bio character counter', () => {
+    renderSignup();
+    expect(screen.getByTestId('bio-char-count')).toBeInTheDocument();
+  });
+
+  it('renders all three birthdate selects', () => {
+    renderSignup();
+    expect(screen.getByTestId('birthdate-year')).toBeInTheDocument();
+    expect(screen.getByTestId('birthdate-month')).toBeInTheDocument();
+    expect(screen.getByTestId('birthdate-day')).toBeInTheDocument();
   });
 
   it('renders the submit button', () => {
@@ -234,6 +257,57 @@ describe('Conditional team name field', () => {
   });
 });
 
+// ── Bio textarea ─────────────────────────────────────────────────────────────
+
+describe('Bio textarea', () => {
+  it('bio character counter starts at 0 / 250', () => {
+    renderSignup();
+    expect(screen.getByTestId('bio-char-count')).toHaveTextContent('0 / 250');
+  });
+
+  it('bio character counter updates as the user types', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.type(screen.getByTestId('bio-input'), 'Hello');
+    expect(screen.getByTestId('bio-char-count')).toHaveTextContent('5 / 250');
+  });
+
+  it('bio character counter shows 250 / 250 at the limit', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.type(screen.getByTestId('bio-input'), 'a'.repeat(250));
+    expect(screen.getByTestId('bio-char-count')).toHaveTextContent('250 / 250');
+  });
+
+  it('bio is optional — form submits without it', async () => {
+    mockFetchSuccess();
+    const user = userEvent.setup();
+    renderSignup();
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    expect(global.fetch).toHaveBeenCalledOnce();
+  });
+});
+
+// ── Birthdate selects ─────────────────────────────────────────────────────────
+
+describe('Birthdate selects', () => {
+  it('combines year, month, and day into a YYYY-MM-DD string in the payload', async () => {
+    mockFetchSuccess();
+    const user = userEvent.setup();
+    renderSignup();
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(body.birthdate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(body.birthdate).toBe('1995-06-15');
+  });
+});
+
 // ── Address groups ────────────────────────────────────────────────────────────
 
 describe('Address groups', () => {
@@ -286,6 +360,7 @@ describe('Form submission', () => {
       email: 'test@company.com',
       role: 'LEARNER',
       department: 'Engineering',
+      birthdate: '1995-06-15',
       addresses: [],
     });
     expect(body.teamName).toBeUndefined();
@@ -301,6 +376,9 @@ describe('Form submission', () => {
     await user.click(screen.getByTestId('role-manager'));
     await user.type(screen.getByTestId('team-name-input'), 'Platform Team');
     await user.selectOptions(screen.getByTestId('department-select'), 'Product');
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '1990');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '03');
+    await user.selectOptions(screen.getByTestId('birthdate-day'), '22');
     await user.click(screen.getByTestId('submit-btn'));
 
     const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
@@ -320,9 +398,7 @@ describe('Form submission', () => {
     await user.type(within(group).getByTestId('address-label-input'), 'Home');
     await user.type(within(group).getByTestId('address-street1-input'), '1 Main St');
     await user.type(within(group).getByTestId('address-city-input'), 'New York');
-    await user.type(within(group).getByTestId('address-state-input'), 'NY');
     await user.type(within(group).getByTestId('address-zip-input'), '10001');
-    await user.type(within(group).getByTestId('address-country-input'), 'US');
 
     await user.click(screen.getByTestId('submit-btn'));
 
