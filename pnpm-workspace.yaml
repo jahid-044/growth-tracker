@@ -1,2 +1,8 @@
 packages:
   - "packages/*"
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  msw: true
+  prisma: true
