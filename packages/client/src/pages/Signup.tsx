@@ -119,22 +119,26 @@ function Signup() {
     if (role === "MANAGER") payload.teamName = teamName;
     if (bio) payload.bio = bio;
 
-    const res = await fetch("http://localhost:8000/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("http://localhost:8000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.message);
-      return;
+      if (!res.ok) {
+        setError(data.message);
+        return;
+      }
+
+      localStorage.setItem("accessToken", data.accessToken);
+      navigate("/");
+    } catch {
+      setError("Unable to reach the server. Please check your connection and try again.");
     }
-
-    localStorage.setItem("accessToken", data.accessToken);
-    navigate("/");
   }
 
   return (
@@ -344,7 +348,9 @@ function Signup() {
             onChange={(e) => setBirthdateYear(e.target.value)}
             className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
           >
-            <option value="">Year</option>
+            <option value="" disabled>
+              Year
+            </option>
             {YEARS.map((y) => (
               <option key={y} value={y}>
                 {y}
@@ -359,7 +365,9 @@ function Signup() {
             onChange={(e) => setBirthdateMonth(e.target.value)}
             className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
           >
-            <option value="">Month</option>
+            <option value="" disabled>
+              Month
+            </option>
             {MONTHS.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -374,7 +382,9 @@ function Signup() {
             onChange={(e) => setBirthdateDay(e.target.value)}
             className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
           >
-            <option value="">Day</option>
+            <option value="" disabled>
+              Day
+            </option>
             {DAYS.map((d) => (
               <option key={d} value={d}>
                 {d}
