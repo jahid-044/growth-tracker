@@ -54,19 +54,26 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 function mockFetchSuccess() {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
-      accessToken: 'test-access-token',
-      user: { id: '1', email: 'test@company.com' },
-    }),
+  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.includes('check-email')) {
+      return Promise.resolve({ ok: true, json: async () => ({ available: true }) });
+    }
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        accessToken: 'test-access-token',
+        user: { id: '1', email: 'test@company.com' },
+      }),
+    });
   });
 }
 
 function mockFetchError(message = 'Email already in use') {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: false,
-    json: async () => ({ message }),
+  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.includes('check-email')) {
+      return Promise.resolve({ ok: true, json: async () => ({ available: true }) });
+    }
+    return Promise.resolve({ ok: false, json: async () => ({ message }) });
   });
 }
 
@@ -287,7 +294,7 @@ describe('Bio textarea', () => {
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    expect(global.fetch).toHaveBeenCalledOnce();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2); // check-email + signup
   });
 });
 
@@ -302,9 +309,84 @@ describe('Birthdate selects', () => {
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
     expect(body.birthdate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(body.birthdate).toBe('1995-06-15');
+  });
+
+  it('month select is disabled until year is chosen', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    expect(screen.getByTestId('birthdate-month')).toBeDisabled();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    expect(screen.getByTestId('birthdate-month')).not.toBeDisabled();
+  });
+
+  it('day select is disabled until both year and month are chosen', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    expect(screen.getByTestId('birthdate-day')).toBeDisabled();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    expect(screen.getByTestId('birthdate-day')).toBeDisabled();
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '06');
+    expect(screen.getByTestId('birthdate-day')).not.toBeDisabled();
+  });
+
+  it('shows 31 options for a 31-day month (January)', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '01');
+    const daySelect = screen.getByTestId('birthdate-day') as HTMLSelectElement;
+    expect(daySelect.options.length - 1).toBe(31); // -1 for placeholder
+  });
+
+  it('shows 30 options for a 30-day month (April)', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '04');
+    const daySelect = screen.getByTestId('birthdate-day') as HTMLSelectElement;
+    expect(daySelect.options.length - 1).toBe(30);
+  });
+
+  it('shows 28 options for February in a non-leap year', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2001');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '02');
+    const daySelect = screen.getByTestId('birthdate-day') as HTMLSelectElement;
+    expect(daySelect.options.length - 1).toBe(28);
+  });
+
+  it('shows 29 options for February in a leap year', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '02');
+    const daySelect = screen.getByTestId('birthdate-day') as HTMLSelectElement;
+    expect(daySelect.options.length - 1).toBe(29);
+  });
+
+  it('resets month and day when year changes', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '06');
+    await user.selectOptions(screen.getByTestId('birthdate-day'), '15');
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '1995');
+    expect(screen.getByTestId('birthdate-month')).toHaveValue('');
+    expect(screen.getByTestId('birthdate-day')).toHaveValue('');
+  });
+
+  it('resets day when month changes', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+    await user.selectOptions(screen.getByTestId('birthdate-year'), '2000');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '01');
+    await user.selectOptions(screen.getByTestId('birthdate-day'), '31');
+    await user.selectOptions(screen.getByTestId('birthdate-month'), '04');
+    expect(screen.getByTestId('birthdate-day')).toHaveValue('');
   });
 });
 
@@ -354,8 +436,8 @@ describe('Form submission', () => {
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    expect(global.fetch).toHaveBeenCalledOnce();
-    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2); // check-email + signup
+    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
     expect(body).toMatchObject({
       email: 'test@company.com',
       role: 'LEARNER',
@@ -381,7 +463,7 @@ describe('Form submission', () => {
     await user.selectOptions(screen.getByTestId('birthdate-day'), '22');
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
     expect(body.teamName).toBe('Platform Team');
     expect(body.role).toBe('MANAGER');
   });
@@ -402,7 +484,7 @@ describe('Form submission', () => {
 
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
     expect(body.addresses).toHaveLength(1);
     expect(body.addresses[0]).toMatchObject({ label: 'Home', street1: '1 Main St', city: 'New York' });
     // client-only fields must not leak into the payload
