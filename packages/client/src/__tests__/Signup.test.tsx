@@ -43,6 +43,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import Signup from '@/pages/Signup';
+import { signup, checkEmailAvailable } from '@/lib/api';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -53,28 +54,27 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-function mockFetchSuccess() {
-  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-    if (url.includes('check-email')) {
-      return Promise.resolve({ ok: true, json: async () => ({ available: true }) });
-    }
-    return Promise.resolve({
-      ok: true,
-      json: async () => ({
-        accessToken: 'test-access-token',
-        user: { id: '1', email: 'test@company.com' },
-      }),
-    });
+// The form talks to the backend through the @/lib/api module (now axios-based),
+// so we mock that module rather than the transport layer.
+vi.mock('@/lib/api', () => ({
+  signup: vi.fn(),
+  checkEmailAvailable: vi.fn(),
+}));
+
+const mockedSignup = vi.mocked(signup);
+const mockedCheckEmail = vi.mocked(checkEmailAvailable);
+
+function mockApiSuccess() {
+  mockedCheckEmail.mockResolvedValue(true);
+  mockedSignup.mockResolvedValue({
+    ok: true,
+    data: { user: { id: '1', email: 'test@company.com' } },
   });
 }
 
-function mockFetchError(message = 'Email already in use') {
-  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-    if (url.includes('check-email')) {
-      return Promise.resolve({ ok: true, json: async () => ({ available: true }) });
-    }
-    return Promise.resolve({ ok: false, json: async () => ({ message }) });
-  });
+function mockApiError(message = 'Email already in use') {
+  mockedCheckEmail.mockResolvedValue(true);
+  mockedSignup.mockResolvedValue({ ok: false, data: { message } });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   mockNavigate.mockReset();
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 // ── Rendering ────────────────────────────────────────────────────────────────
@@ -287,14 +287,14 @@ describe('Bio textarea', () => {
   });
 
   it('bio is optional — form submits without it', async () => {
-    mockFetchSuccess();
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2); // check-email + signup
+    await vi.waitFor(() => expect(mockedSignup).toHaveBeenCalledTimes(1));
   });
 });
 
@@ -302,14 +302,15 @@ describe('Bio textarea', () => {
 
 describe('Birthdate selects', () => {
   it('combines year, month, and day into a YYYY-MM-DD string in the payload', async () => {
-    mockFetchSuccess();
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
+    await vi.waitFor(() => expect(mockedSignup).toHaveBeenCalledTimes(1));
+    const body = mockedSignup.mock.calls[0][0];
     expect(body.birthdate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(body.birthdate).toBe('1995-06-15');
   });
@@ -429,15 +430,16 @@ describe('Address groups', () => {
 
 describe('Form submission', () => {
   it('submits the correct payload for a Learner with no addresses', async () => {
-    mockFetchSuccess();
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
     await fillRequiredFields(user);
     await user.click(screen.getByTestId('submit-btn'));
 
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2); // check-email + signup
-    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
+    await vi.waitFor(() => expect(mockedSignup).toHaveBeenCalledTimes(1));
+    expect(mockedCheckEmail).toHaveBeenCalledTimes(1);
+    const body = mockedSignup.mock.calls[0][0];
     expect(body).toMatchObject({
       email: 'test@company.com',
       role: 'LEARNER',
@@ -449,7 +451,7 @@ describe('Form submission', () => {
   });
 
   it('includes teamName in the payload when role is Manager', async () => {
-    mockFetchSuccess();
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
@@ -463,13 +465,14 @@ describe('Form submission', () => {
     await user.selectOptions(screen.getByTestId('birthdate-day'), '22');
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
+    await vi.waitFor(() => expect(mockedSignup).toHaveBeenCalledTimes(1));
+    const body = mockedSignup.mock.calls[0][0];
     expect(body.teamName).toBe('Platform Team');
     expect(body.role).toBe('MANAGER');
   });
 
   it('includes address data and strips client-only fields', async () => {
-    mockFetchSuccess();
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
@@ -484,16 +487,18 @@ describe('Form submission', () => {
 
     await user.click(screen.getByTestId('submit-btn'));
 
-    const body = JSON.parse((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1].body);
+    await vi.waitFor(() => expect(mockedSignup).toHaveBeenCalledTimes(1));
+    const body = mockedSignup.mock.calls[0][0];
     expect(body.addresses).toHaveLength(1);
     expect(body.addresses[0]).toMatchObject({ label: 'Home', street1: '1 Main St', city: 'New York' });
     // client-only fields must not leak into the payload
-    expect(body.addresses[0].id).toBeUndefined();
-    expect(body.addresses[0].isOpen).toBeUndefined();
+    const leaked = body.addresses[0] as unknown as Record<string, unknown>;
+    expect(leaked.id).toBeUndefined();
+    expect(leaked.isOpen).toBeUndefined();
   });
 
   it('shows an error message when the API returns an error', async () => {
-    mockFetchError('Email already in use');
+    mockApiError('Email already in use');
     const user = userEvent.setup();
     renderSignup();
 
@@ -503,8 +508,8 @@ describe('Form submission', () => {
     expect(await screen.findByTestId('error-message')).toHaveTextContent('Email already in use');
   });
 
-  it('navigates to / on successful signup', async () => {
-    mockFetchSuccess();
+  it('navigates to /login on successful signup (user must log in)', async () => {
+    mockApiSuccess();
     const user = userEvent.setup();
     renderSignup();
 
@@ -512,7 +517,7 @@ describe('Form submission', () => {
     await user.click(screen.getByTestId('submit-btn'));
 
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/');
+      expect(mockNavigate).toHaveBeenCalledWith('/login', { state: { justSignedUp: true } });
     });
   });
 });
