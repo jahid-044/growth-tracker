@@ -83,10 +83,8 @@ function Signup() {
         return;
       }
 
-      if (responseData.accessToken) {
-        localStorage.setItem("accessToken", responseData.accessToken);
-      }
-      navigate("/");
+      // Signup no longer auto-authenticates — the user must log in explicitly.
+      navigate("/login", { state: { justSignedUp: true } });
     } catch {
       setServerError("Unable to reach the server. Please check your connection and try again.");
     }
