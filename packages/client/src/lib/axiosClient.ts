@@ -9,7 +9,7 @@ import {
   notifyAuthFailure,
 } from "@/lib/tokenStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 /** Extra per-request flags this client understands. */
 interface AuthRequestConfig extends InternalAxiosRequestConfig {
