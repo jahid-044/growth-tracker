@@ -2,9 +2,15 @@ import type { AxiosRequestConfig } from "axios";
 import { api } from "@/lib/axiosClient";
 import type { LoginResponse, MeResponse, RefreshResponse } from "@/types/auth";
 
-/** POST /api/auth/login — returns access token + minimal user. Errors propagate. */
+/**
+ * POST /api/auth/login — returns access token + minimal user. Uses `_skipAuthRefresh`
+ * so a 401 (bad credentials) propagates as-is instead of being mistaken for an expired
+ * access token and triggering a spurious /refresh attempt.
+ */
 export async function loginRequest(email: string, password: string): Promise<LoginResponse> {
-  const { data } = await api.post<LoginResponse>("/api/auth/login", { email, password });
+  const { data } = await api.post<LoginResponse>("/api/auth/login", { email, password }, {
+    _skipAuthRefresh: true,
+  } as AxiosRequestConfig);
   return data;
 }
 
