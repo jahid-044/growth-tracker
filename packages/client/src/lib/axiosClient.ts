@@ -1,6 +1,5 @@
 import axios, {
   AxiosError,
-  type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from "axios";
 import {
@@ -45,10 +44,6 @@ function flushWaiters(token: string | null) {
   refreshWaiters = [];
 }
 
-function isRefreshCall(config?: AxiosRequestConfig): boolean {
-  return Boolean(config?.url && config.url.endsWith("/api/auth/refresh"));
-}
-
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -59,10 +54,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // The refresh call itself failed → auth is unrecoverable. Don't recurse.
-    if (isRefreshCall(original)) {
-      setAccessToken(null);
-      notifyAuthFailure();
+    // Opted out of the refresh dance (login/signup, and the refresh call itself).
+    // Propagate the original 401 untouched so callers see the real error and the
+    // interceptor never recurses. Recovery/cleanup is the caller's responsibility
+    // (the refresh owner's catch below, and AuthContext.bootstrap).
+    if (original._skipAuthRefresh) {
       return Promise.reject(error);
     }
 
