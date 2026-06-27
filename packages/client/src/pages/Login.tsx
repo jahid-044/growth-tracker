@@ -6,6 +6,7 @@ import axios from "axios";
 import { loginSchema, type LoginFormValues } from "@/lib/loginSchema";
 import { useAuth } from "@/context/AuthContext";
 import { FormField, fieldClassName } from "@/components/ui/field";
+import { useFocusGuard } from "@/hooks/useFocusGuard";
 
 interface LocationState {
   from?: { pathname?: string };
@@ -31,6 +32,12 @@ function Login() {
     mode: "onBlur",
     defaultValues: { email: "", password: "" },
   });
+
+  const emailGuard = useFocusGuard();
+  const passwordGuard = useFocusGuard();
+
+  const { onBlur: emailOnBlur, ...emailRegister } = register("email");
+  const { onBlur: passwordOnBlur, ...passwordRegister } = register("password");
 
   async function onSubmit(data: LoginFormValues) {
     setServerError(null);
@@ -65,25 +72,29 @@ function Login() {
         </p>
       )}
 
-      <FormField label="Email" htmlFor="email" error={errors.email?.message}>
+      <FormField label="Email" htmlFor="email" error={!emailGuard.focused ? errors.email?.message : undefined}>
         <input
           id="email"
           data-testid="email-input"
           type="email"
           autoComplete="email"
           className={fieldClassName}
-          {...register("email")}
+          {...emailRegister}
+          onFocus={emailGuard.onFocus}
+          onBlur={(e) => { void emailOnBlur(e); emailGuard.onBlur(); }}
         />
       </FormField>
 
-      <FormField label="Password" htmlFor="password" error={errors.password?.message}>
+      <FormField label="Password" htmlFor="password" error={!passwordGuard.focused ? errors.password?.message : undefined}>
         <input
           id="password"
           data-testid="password-input"
           type="password"
           autoComplete="current-password"
           className={fieldClassName}
-          {...register("password")}
+          {...passwordRegister}
+          onFocus={passwordGuard.onFocus}
+          onBlur={(e) => { void passwordOnBlur(e); passwordGuard.onBlur(); }}
         />
       </FormField>
 
