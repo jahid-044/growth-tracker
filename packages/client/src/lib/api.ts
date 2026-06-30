@@ -1,6 +1,6 @@
+import axios from "axios";
+import { api } from "@/lib/axiosClient";
 import type { AddressInput } from "@/types/address";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export interface SignupPayload {
   email: string;
@@ -29,10 +29,7 @@ export interface SignupResult {
  */
 export async function checkEmailAvailable(email: string): Promise<boolean> {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/api/auth/check-email?email=${encodeURIComponent(email)}`,
-    );
-    const data = await res.json();
+    const { data } = await api.get("/api/auth/check-email", { params: { email } });
     return Boolean(data.available);
   } catch {
     return true;
@@ -41,12 +38,13 @@ export async function checkEmailAvailable(email: string): Promise<boolean> {
 
 /** Registers a new user. Caller inspects `ok`/`data` to branch on success vs. error. */
 export async function signup(payload: SignupPayload): Promise<SignupResult> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  return { ok: res.ok, data };
+  try {
+    const { data } = await api.post("/api/auth/signup", payload);
+    return { ok: true, data };
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response) {
+      return { ok: false, data: err.response.data };
+    }
+    throw err; // Network error → handled by caller's catch.
+  }
 }
