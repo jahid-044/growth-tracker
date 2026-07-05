@@ -5,6 +5,7 @@ import axios, {
 import {
   getAccessToken,
   setAccessToken,
+  isAccessTokenExpired,
   notifyAuthFailure,
 } from "@/lib/tokenStore";
 
@@ -25,12 +26,20 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// ── Request interceptor: attach the stored access token ─────────────────────────
-api.interceptors.request.use((config: AuthRequestConfig) => {
-  if (!config._skipAuthRefresh) {
-    const token = getAccessToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+// ── Request interceptor: refresh ahead of expiry, then attach the access token ──
+// Decoding the token's `exp` here lets us swap an expired token for a fresh one
+// *before* the request goes out, avoiding the guaranteed 401 + retry the response
+// interceptor would otherwise incur. The refresh is deduped via `refreshPromise`
+// below, so concurrent expired requests share a single /refresh call.
+api.interceptors.request.use(async (config: AuthRequestConfig) => {
+  if (config._skipAuthRefresh) return config;
+  let token = getAccessToken();
+  if (token && isAccessTokenExpired(token)) {
+    // On failure `refreshAccessToken` clears auth + notifies, then rethrows —
+    // rejecting here fails the request fast instead of firing a doomed 401.
+    token = await refreshAccessToken();
   }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
