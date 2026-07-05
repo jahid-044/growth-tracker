@@ -25,7 +25,7 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// ── Request interceptor: attach the in-memory access token ──────────────────────
+// ── Request interceptor: attach the stored access token ─────────────────────────
 api.interceptors.request.use((config: AuthRequestConfig) => {
   if (!config._skipAuthRefresh) {
     const token = getAccessToken();

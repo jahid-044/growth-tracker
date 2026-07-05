@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  getAccessToken,
   setAccessToken,
   subscribeToToken,
   registerAuthFailureHandler,
@@ -29,22 +30,29 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessTokenState] = useState<string | null>(null);
+  const [accessToken, setAccessTokenState] = useState<string | null>(getAccessToken);
   const [isLoading, setIsLoading] = useState(true);
   // Guards against StrictMode's double-mount firing two concurrent /refresh calls,
   // which would race the backend's refresh-token rotation.
   const didBootstrap = useRef(false);
 
-  /** Restore the session on load using the httpOnly refresh cookie. Silent on 401. */
+  /**
+   * Restore the session on load. With a persisted access token, go straight to
+   * `/me` — if the token is expired, the axios interceptor transparently
+   * refreshes and retries. Without one, fall back to the httpOnly refresh
+   * cookie (e.g. localStorage was cleared). Silent on 401 either way.
+   */
   const bootstrap = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { accessToken } = await refreshRequest();
-      setAccessToken(accessToken);
+      if (!getAccessToken()) {
+        const { accessToken } = await refreshRequest();
+        setAccessToken(accessToken);
+      }
       const { user } = await meRequest();
       setUser(user);
     } catch {
-      // No valid refresh cookie → user simply isn't logged in. Stay silent.
+      // No valid token or refresh cookie → user simply isn't logged in. Stay silent.
       setAccessToken(null);
       setUser(null);
     } finally {
@@ -53,17 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Mirror interceptor-driven token changes into React state.
-    const unsubscribe = subscribeToToken(setAccessTokenState);
+    // Mirror token changes (interceptor- or other-tab-driven) into React state.
+    const unsubscribe = subscribeToToken((token) => {
+      setAccessTokenState(token);
+      // A null token means logout or unrecoverable refresh failure — possibly
+      // from another tab via the storage event. Clear user so guards redirect.
+      if (token === null) setUser(null);
+    });
     // When refresh ultimately fails, clear user so guards redirect to /login.
     registerAuthFailureHandler(() => {
       setAccessToken(null);
       setUser(null);
     });
-    // Restore session on mount (sets loading state, then fetches via the refresh cookie).
+    // Restore session on mount (persisted token first, refresh cookie as fallback).
     if (!didBootstrap.current) {
       didBootstrap.current = true;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       void bootstrap();
     }
     return unsubscribe;
