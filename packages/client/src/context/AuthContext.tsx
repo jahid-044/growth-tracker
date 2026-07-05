@@ -38,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * Restore the session on load. With a persisted access token, go straight to
-   * `/me` — if the token is expired, the axios interceptor transparently
-   * refreshes and retries. Without one, fall back to the httpOnly refresh
+   * `/me` — if the token is expired, the axios request interceptor refreshes it
+   * before the call goes out. Without one, fall back to the httpOnly refresh
    * cookie (e.g. localStorage was cleared). Silent on 401 either way.
    */
   const bootstrap = useCallback(async () => {
