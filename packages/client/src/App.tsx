@@ -6,6 +6,7 @@ import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import Account from '@/pages/settings/Account';
 import Security from '@/pages/settings/Security';
+import NotFound from '@/pages/NotFound';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PublicOnlyRoute from '@/components/auth/PublicOnlyRoute';
 import PublicLayout from '@/components/layout/PublicLayout';
@@ -29,6 +30,7 @@ function App() {
             <Route path="account" element={<Account />} />
             <Route path="security" element={<Security />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
     </Routes>
