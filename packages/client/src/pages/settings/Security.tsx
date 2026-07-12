@@ -1,0 +1,10 @@
+function Security() {
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-medium text-neutral-900">Security</h2>
+      <p className="text-sm text-neutral-600">Security settings will go here.</p>
+    </div>
+  );
+}
+
+export default Security;
