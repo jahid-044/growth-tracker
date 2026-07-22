@@ -30,6 +30,8 @@ function App() {
             <Route path="account" element={<Account />} />
             <Route path="security" element={<Security />} />
           </Route>
+        </Route>
+        <Route element={<PublicLayout />}>
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
