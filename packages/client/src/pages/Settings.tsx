@@ -1,15 +1,18 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-const tabs = [
-  { to: "account", label: "Account" },
-  { to: "security", label: "Security" },
-];
-
 function Settings() {
+  const { t } = useTranslation();
+
+  const tabs = [
+    { to: "account", label: t("settings.tabs.account") },
+    { to: "security", label: t("settings.tabs.security") },
+  ];
+
   return (
     <div className="w-full max-w-lg space-y-6">
-      <h1 className="text-2xl font-semibold text-neutral-900">Settings</h1>
+      <h1 className="text-2xl font-semibold text-neutral-900">{t("settings.title")}</h1>
 
       <div className="flex gap-1 border-b border-neutral-200">
         {tabs.map(({ to, label }) => (

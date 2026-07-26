@@ -1,4 +1,5 @@
 import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { checkEmailAvailable } from "@/lib/api";
 import { FormField, fieldClassName } from "@/components/ui/field";
 import { useFocusGuard } from "@/hooks/useFocusGuard";
@@ -12,13 +13,14 @@ export function EmailField() {
     getValues,
     formState: { errors },
   } = useFormContext<SignupFieldValues, unknown, SignupFormValues>();
+  const { t } = useTranslation();
 
   const guard = useFocusGuard();
   const { onBlur: rhfBlur, ...rest } = register("email");
 
   return (
     <FormField
-      label="Email"
+      label={t("common.email")}
       htmlFor="email"
       error={!guard.focused ? errors.email?.message : undefined}
     >
@@ -37,7 +39,7 @@ export function EmailField() {
           if (!(await trigger("email"))) return;
           const available = await checkEmailAvailable(getValues("email"));
           if (!available) {
-            setError("email", { type: "manual", message: "Email is already in use" });
+            setError("email", { type: "manual", message: t("validation.emailInUse") });
           }
         }}
       />

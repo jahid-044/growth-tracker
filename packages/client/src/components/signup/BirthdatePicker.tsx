@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { YEARS, MONTHS, getDaysInMonth, buildDays } from "@/lib/constants";
 import { fieldClassNameBase, labelClassName } from "@/components/ui/field";
 import type { SignupFieldValues, SignupFormValues } from "@/lib/signupSchema";
@@ -13,6 +14,7 @@ export function BirthdatePicker() {
     setValue,
     formState: { errors, touchedFields, isSubmitted },
   } = useFormContext<SignupFieldValues, unknown, SignupFormValues>();
+  const { t } = useTranslation();
 
   const year = useWatch({ control, name: "birthdateYear" });
   const month = useWatch({ control, name: "birthdateMonth" });
@@ -37,17 +39,17 @@ export function BirthdatePicker() {
 
   return (
     <div className="space-y-1">
-      <span className={labelClassName}>Date of birth</span>
+      <span className={labelClassName}>{t("form.birthdate.label")}</span>
       <div className="flex gap-2">
         <select
           id="birthdateYear"
-          aria-label="Year"
+          aria-label={t("form.birthdate.year")}
           data-testid="birthdate-year"
           className={selectClassName}
           {...register("birthdateYear")}
         >
           <option value="" disabled>
-            Year
+            {t("form.birthdate.year")}
           </option>
           {YEARS.map((y) => (
             <option key={y} value={y}>
@@ -57,14 +59,14 @@ export function BirthdatePicker() {
         </select>
         <select
           id="birthdateMonth"
-          aria-label="Month"
+          aria-label={t("form.birthdate.month")}
           data-testid="birthdate-month"
           disabled={!year}
           className={selectClassName}
           {...register("birthdateMonth")}
         >
           <option value="" disabled>
-            Month
+            {t("form.birthdate.month")}
           </option>
           {MONTHS.map((m) => (
             <option key={m} value={m}>
@@ -74,14 +76,14 @@ export function BirthdatePicker() {
         </select>
         <select
           id="birthdateDay"
-          aria-label="Day"
+          aria-label={t("form.birthdate.day")}
           data-testid="birthdate-day"
           disabled={!year || !month}
           className={selectClassName}
           {...register("birthdateDay")}
         >
           <option value="" disabled>
-            Day
+            {t("form.birthdate.day")}
           </option>
           {days.map((d) => (
             <option key={d} value={d}>

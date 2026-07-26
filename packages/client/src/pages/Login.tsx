@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
-import { loginSchema, type LoginFormValues } from "@/lib/loginSchema";
+import { buildLoginSchema, type LoginFormValues } from "@/lib/loginSchema";
 import { useAuth } from "@/context/AuthContext";
 import { FormField, fieldClassName } from "@/components/ui/field";
 import { useFocusGuard } from "@/hooks/useFocusGuard";
+import { translateServerError } from "@/lib/serverErrorMessages";
 
 interface LocationState {
   from?: { pathname?: string };
@@ -16,19 +18,23 @@ interface LocationState {
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { lang } = useParams<{ lang: string }>();
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const state = (location.state as LocationState | null) ?? null;
-  const from = state?.from?.pathname ?? "/";
+  const from = state?.from?.pathname ?? `/${lang}`;
   const justSignedUp = Boolean(state?.justSignedUp);
+
+  const schema = useMemo(() => buildLoginSchema(t), [t]);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(schema),
     mode: "onBlur",
     defaultValues: { email: "", password: "" },
   });
@@ -47,14 +53,10 @@ function Login() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         const message = (err.response.data as { message?: string })?.message;
-        if (err.response.status === 401) {
-          setServerError(message ?? "Invalid credentials");
-        } else {
-          setServerError(message ?? "Something went wrong. Please try again.");
-        }
+        setServerError(translateServerError(message, err.response.status, t));
         return;
       }
-      setServerError("Unable to reach the server. Please check your connection and try again.");
+      setServerError(t("auth.errors.networkUnreachable"));
     }
   }
 
@@ -64,15 +66,15 @@ function Login() {
       onSubmit={handleSubmit(onSubmit)}
       className="w-full max-w-lg space-y-6 rounded-xl bg-white p-8 shadow-sm"
     >
-      <h1 className="text-2xl font-semibold text-neutral-900">Log in</h1>
+      <h1 className="text-2xl font-semibold text-neutral-900">{t("auth.login.title")}</h1>
 
       {justSignedUp && (
         <p data-testid="signup-success" className="text-sm text-green-600">
-          Account created. Please log in to continue.
+          {t("auth.login.signupSuccess")}
         </p>
       )}
 
-      <FormField label="Email" htmlFor="email" error={!emailGuard.focused ? errors.email?.message : undefined}>
+      <FormField label={t("common.email")} htmlFor="email" error={!emailGuard.focused ? errors.email?.message : undefined}>
         <input
           id="email"
           data-testid="email-input"
@@ -85,7 +87,7 @@ function Login() {
         />
       </FormField>
 
-      <FormField label="Password" htmlFor="password" error={!passwordGuard.focused ? errors.password?.message : undefined}>
+      <FormField label={t("common.password")} htmlFor="password" error={!passwordGuard.focused ? errors.password?.message : undefined}>
         <input
           id="password"
           data-testid="password-input"
@@ -110,13 +112,13 @@ function Login() {
         disabled={isSubmitting}
         className="w-full rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? "Logging in…" : "Log in"}
+        {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
       </button>
 
       <p className="text-center text-sm text-neutral-500">
-        Don&apos;t have an account?{" "}
-        <Link to="/signup" className="font-medium text-neutral-900 hover:underline">
-          Sign up
+        {t("auth.login.noAccount")}{" "}
+        <Link to={`/${lang}/signup`} className="font-medium text-neutral-900 hover:underline">
+          {t("auth.login.signUpLink")}
         </Link>
       </p>
     </form>

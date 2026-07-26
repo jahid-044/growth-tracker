@@ -1,0 +1,139 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "email": "Email",
+    "password": "Password",
+    "department": "Department",
+    "role": "Role"
+  },
+  "nav": {
+    "appName": "Growth Tracker",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log out",
+    "language": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "signupSuccess": "Account created. Please log in to continue."
+    },
+    "signup": {
+      "title": "Create account",
+      "roleLearner": "Learner",
+      "roleManager": "Manager",
+      "teamName": "Team name",
+      "experienceLevel": "Experience level",
+      "bio": "Bio",
+      "submit": "Create account",
+      "submitting": "Creating account…"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid credentials",
+      "emailInUse": "Email already in use",
+      "genericServer": "Something went wrong. Please try again.",
+      "networkUnreachable": "Unable to reach the server. Please check your connection and try again."
+    }
+  },
+  "profile": {
+    "title": "Profile"
+  },
+  "home": {
+    "title": "Dashboard",
+    "signedInAs": "Signed in as {{email}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "account": "Account",
+      "security": "Security"
+    },
+    "account": {
+      "title": "Account",
+      "placeholder": "Account settings will go here."
+    },
+    "security": {
+      "title": "Security",
+      "placeholder": "Security settings will go here."
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist. Check the URL and try again, or return to the dashboard.",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "form": {
+    "addresses": {
+      "label": "Addresses",
+      "optional": "(optional)",
+      "newAddress": "New address",
+      "add": "+ Add an address",
+      "remove": "Remove",
+      "labelField": "Label",
+      "labelPlaceholder": "Label (e.g. Home)",
+      "street1": "Street address",
+      "street2Placeholder": "Apt, suite, etc. (optional)",
+      "city": "City",
+      "zip": "ZIP code",
+      "zipPlaceholder": "ZIP"
+    },
+    "birthdate": {
+      "label": "Date of birth",
+      "year": "Year",
+      "month": "Month",
+      "day": "Day"
+    },
+    "passwordRules": {
+      "length": "At least 8 characters",
+      "upper": "At least one capital letter",
+      "special": "At least one special character"
+    },
+    "departmentPlaceholder": "Select a department"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Must be a valid email",
+    "emailInUse": "Email is already in use",
+    "passwordMinLength": "Must be at least 8 characters",
+    "passwordUpper": "Must contain at least one capital letter",
+    "passwordSpecial": "Must contain at least one special character",
+    "passwordRequired": "Password is required",
+    "departmentRequired": "Department is required",
+    "teamNameRequired": "Team name is required for managers",
+    "yearRequired": "Year is required",
+    "monthRequired": "Month is required",
+    "dayRequired": "Day is required",
+    "birthdateInvalid": "Please select a valid date",
+    "birthdateFuture": "Date of birth cannot be in the future",
+    "addressLabelRequired": "Label is required",
+    "addressStreetRequired": "Street address is required",
+    "addressCityRequired": "City is required",
+    "addressZipRequired": "ZIP code is required",
+    "addressZipNumeric": "ZIP code must be numeric"
+  },
+  "enums": {
+    "role": {
+      "LEARNER": "Learner",
+      "MANAGER": "Manager"
+    },
+    "experienceLevel": {
+      "JUNIOR": "JUNIOR",
+      "MID": "MID",
+      "SENIOR": "SENIOR"
+    },
+    "department": {
+      "Engineering": "Engineering",
+      "Product": "Product",
+      "Design": "Design",
+      "Marketing": "Marketing",
+      "Operations": "Operations",
+      "HR": "HR",
+      "Other": "Other"
+    }
+  }
+}

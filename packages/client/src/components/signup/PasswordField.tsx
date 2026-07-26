@@ -1,12 +1,13 @@
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { fieldClassName, labelClassName } from "@/components/ui/field";
 import { useFocusGuard } from "@/hooks/useFocusGuard";
 import type { SignupFieldValues, SignupFormValues } from "@/lib/signupSchema";
 
 const PASSWORD_RULES = [
-  { testid: "password-rule-length", label: "At least 8 characters", test: (pw: string) => pw.length >= 8 },
-  { testid: "password-rule-upper", label: "At least one capital letter", test: (pw: string) => /[A-Z]/.test(pw) },
-  { testid: "password-rule-special", label: "At least one special character", test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
+  { testid: "password-rule-length", key: "form.passwordRules.length", test: (pw: string) => pw.length >= 8 },
+  { testid: "password-rule-upper", key: "form.passwordRules.upper", test: (pw: string) => /[A-Z]/.test(pw) },
+  { testid: "password-rule-special", key: "form.passwordRules.special", test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
 ] as const;
 
 export function PasswordField() {
@@ -15,6 +16,7 @@ export function PasswordField() {
     control,
     formState: { errors },
   } = useFormContext<SignupFieldValues, unknown, SignupFormValues>();
+  const { t } = useTranslation();
 
   const guard = useFocusGuard();
   const password = useWatch({ control, name: "password" }) ?? "";
@@ -23,7 +25,7 @@ export function PasswordField() {
   return (
     <div className="space-y-1">
       <label htmlFor="password" className={labelClassName}>
-        Password
+        {t("common.password")}
       </label>
       <input
         id="password"
@@ -51,7 +53,7 @@ export function PasswordField() {
               data-met={met ? "true" : "false"}
               className={met ? "text-green-600" : "text-neutral-400"}
             >
-              {met ? "✓" : "○"} {rule.label}
+              {met ? "✓" : "○"} {t(rule.key)}
             </li>
           );
         })}

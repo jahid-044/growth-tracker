@@ -11,28 +11,33 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PublicOnlyRoute from '@/components/auth/PublicOnlyRoute';
 import PublicLayout from '@/components/layout/PublicLayout';
 import AppLayout from '@/components/layout/AppLayout';
+import LocaleRoute from '@/components/routing/LocaleRoute';
+import RootRedirect from '@/components/routing/RootRedirect';
 
 function App() {
   return (
     <Routes>
-      <Route element={<PublicLayout />}>
-        <Route element={<PublicOnlyRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-        </Route>
-      </Route>
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />}>
-            <Route index element={<Navigate to="account" replace />} />
-            <Route path="account" element={<Account />} />
-            <Route path="security" element={<Security />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="/:lang" element={<LocaleRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
           </Route>
         </Route>
-        <Route element={<PublicLayout />}>
-          <Route path="*" element={<NotFound />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<Home />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />}>
+              <Route index element={<Navigate to="account" replace />} />
+              <Route path="account" element={<Account />} />
+              <Route path="security" element={<Security />} />
+            </Route>
+          </Route>
+          <Route element={<PublicLayout />}>
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
