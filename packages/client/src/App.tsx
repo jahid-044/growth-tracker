@@ -3,6 +3,7 @@ import Home from '@/pages/Home';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
 import Profile from '@/pages/Profile';
+import Users from '@/pages/Users';
 import Settings from '@/pages/Settings';
 import Account from '@/pages/settings/Account';
 import Security from '@/pages/settings/Security';
@@ -29,6 +30,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route index element={<Home />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="users" element={<Users />} />
             <Route path="settings" element={<Settings />}>
               <Route index element={<Navigate to="account" replace />} />
               <Route path="account" element={<Account />} />

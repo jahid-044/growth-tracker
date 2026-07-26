@@ -222,9 +222,9 @@ export const swaggerOptions: Options = {
           tags: ["Users"],
           summary: "List all users (paginated, filterable, sortable)",
           description:
-            "Returns a paginated list of users (page size 10). Supports filtering by role, department, " +
-            "and experience level, a case-insensitive substring search over email and teamName, and " +
-            "configurable sorting. Requires a Bearer access token.",
+            "Returns a paginated list of users (page size 10 by default, configurable up to 100). Supports " +
+            "filtering by role, department, and experience level, a case-insensitive substring search over " +
+            "email and teamName, and configurable sorting. Requires a Bearer access token.",
           security: [{ bearerAuth: [] }],
           parameters: [
             {
@@ -234,6 +234,14 @@ export const swaggerOptions: Options = {
               description: "1-based page number.",
               schema: { type: "integer", minimum: 1, default: 1 },
               example: 1,
+            },
+            {
+              name: "pageSize",
+              in: "query",
+              required: false,
+              description: "Number of users per page.",
+              schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+              example: 10,
             },
             {
               name: "role",

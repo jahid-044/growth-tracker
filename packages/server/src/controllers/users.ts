@@ -4,13 +4,14 @@ import { z } from "zod";
 
 const prisma = new PrismaClient();
 
-const PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 100;
 
 // Whitelisted fields the caller is allowed to sort by.
 const SORTABLE_FIELDS = ["createdAt", "email", "role", "department", "experienceLevel"] as const;
 
 const listUsersQuerySchema = z.object({
   page:            z.coerce.number().int().min(1).optional().default(1),
+  pageSize:        z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).optional().default(10),
   // ── Filters ──
   role:            z.nativeEnum(Role).optional(),
   department:      z.nativeEnum(Department).optional(),
@@ -29,7 +30,7 @@ export async function listUsers(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { page, role, department, experienceLevel, search, sortBy, sortOrder } = result.data;
+  const { page, pageSize, role, department, experienceLevel, search, sortBy, sortOrder } = result.data;
 
   const where: Prisma.UserWhereInput = {
     ...(role && { role }),
@@ -49,8 +50,8 @@ export async function listUsers(req: Request, res: Response): Promise<void> {
     prisma.user.findMany({
       where,
       orderBy,
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       select: {
         id:              true,
         email:           true,
@@ -70,9 +71,9 @@ export async function listUsers(req: Request, res: Response): Promise<void> {
     users,
     pagination: {
       page,
-      pageSize: PAGE_SIZE,
+      pageSize,
       total,
-      totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
     },
     sort: { sortBy, sortOrder },
     filters: {

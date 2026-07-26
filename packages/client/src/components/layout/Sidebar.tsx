@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, Settings, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Settings, LogOut, User, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -14,6 +14,7 @@ function Sidebar() {
   const navItems = [
     { to: `/${lang}`, label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
     { to: `/${lang}/profile`, label: t("nav.profile"), icon: User, end: false },
+    { to: `/${lang}/users`, label: t("nav.users"), icon: Users, end: false },
     { to: `/${lang}/settings`, label: t("nav.settings"), icon: Settings, end: false },
   ];
 

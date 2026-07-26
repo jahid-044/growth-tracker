@@ -10,6 +10,7 @@
     "appName": "Growth Tracker",
     "dashboard": "لوحة التحكم",
     "profile": "الملف الشخصي",
+    "users": "المستخدمون",
     "settings": "الإعدادات",
     "logout": "تسجيل الخروج",
     "language": "اللغة"
@@ -42,6 +43,32 @@
   },
   "profile": {
     "title": "الملف الشخصي"
+  },
+  "users": {
+    "title": "المستخدمون",
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "role": "الدور",
+      "department": "القسم",
+      "experienceLevel": "مستوى الخبرة",
+      "teamName": "الفريق",
+      "createdAt": "تاريخ الإنشاء"
+    },
+    "filters": {
+      "allRoles": "كل الأدوار",
+      "allDepartments": "كل الأقسام",
+      "allLevels": "كل المستويات",
+      "search": "بحث",
+      "searchPlaceholder": "ابحث بالبريد الإلكتروني أو اسم الفريق",
+      "pageSize": "عدد الصفوف في الصفحة"
+    },
+    "pagination": {
+      "prev": "السابق",
+      "next": "التالي",
+      "pageOf": "صفحة {{page}} من {{totalPages}}"
+    },
+    "empty": "لم يتم العثور على مستخدمين.",
+    "error": "حدث خطأ أثناء تحميل المستخدمين. يرجى المحاولة مرة أخرى."
   },
   "home": {
     "title": "لوحة التحكم",

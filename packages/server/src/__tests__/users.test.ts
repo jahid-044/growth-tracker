@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import request from "supertest";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { app } from "../app";
 
 const prisma = new PrismaClient();
@@ -13,6 +13,19 @@ async function cleanupTestUsers() {
   await prisma.user.deleteMany({
     where: { email: { endsWith: TEST_EMAIL_SUFFIX } },
   });
+}
+
+// Tests run against the real dev Postgres database (see vitest.config.ts),
+// which may already hold unrelated users (real accounts, leftover manual
+// testing, etc). Total-count assertions capture a baseline with the same
+// `where` the endpoint would apply *before* seeding test data, so they hold
+// regardless of what else is in the table.
+async function countWhere(where: Prisma.UserWhereInput = {}): Promise<number> {
+  return prisma.user.count({ where });
+}
+
+function usersOnPage(total: number, page: number, pageSize = 10): number {
+  return Math.max(0, Math.min(pageSize, total - (page - 1) * pageSize));
 }
 
 beforeAll(async () => {
@@ -85,22 +98,26 @@ describe("GET /api/users", () => {
   });
 
   it("returns the first page of 10 users by default", async () => {
+    const baseline = await countWhere();
     const token = await signupAndGetToken();
     await createUsers(11);
+    const total = baseline + 12;
 
     const res = await request(app)
       .get("/api/users")
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.users).toHaveLength(10);
-    expect(res.body.pagination).toEqual({ page: 1, pageSize: 10, total: 12, totalPages: 2 });
+    expect(res.body.users).toHaveLength(usersOnPage(total, 1));
+    expect(res.body.pagination).toEqual({ page: 1, pageSize: 10, total, totalPages: Math.ceil(total / 10) });
     expect(res.body.users[0].passwordHash).toBeUndefined();
   });
 
   it("returns the second page with remaining users", async () => {
+    const baseline = await countWhere();
     const token = await signupAndGetToken();
     await createUsers(11);
+    const total = baseline + 12;
 
     const res = await request(app)
       .get("/api/users")
@@ -108,12 +125,14 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.users).toHaveLength(2);
-    expect(res.body.pagination).toEqual({ page: 2, pageSize: 10, total: 12, totalPages: 2 });
+    expect(res.body.users).toHaveLength(usersOnPage(total, 2));
+    expect(res.body.pagination).toEqual({ page: 2, pageSize: 10, total, totalPages: Math.ceil(total / 10) });
   });
 
   it("returns an empty list for a page beyond the last one", async () => {
+    const baseline = await countWhere();
     const token = await signupAndGetToken();
+    const total = baseline + 1;
 
     const res = await request(app)
       .get("/api/users")
@@ -121,8 +140,13 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.users).toHaveLength(0);
-    expect(res.body.pagination).toEqual({ page: 5, pageSize: 10, total: 1, totalPages: 1 });
+    expect(res.body.users).toHaveLength(usersOnPage(total, 5));
+    expect(res.body.pagination).toEqual({
+      page: 5,
+      pageSize: 10,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / 10)),
+    });
   });
 
   it("returns 400 for a non-positive page value", async () => {
@@ -149,6 +173,60 @@ describe("GET /api/users", () => {
     expect(res.body.errors.page).toBeDefined();
   });
 
+  // ── pageSize ──
+
+  it("honors a custom pageSize", async () => {
+    const baseline = await countWhere();
+    const token = await signupAndGetToken();
+    await createUsers(11);
+    const total = baseline + 12;
+
+    const res = await request(app)
+      .get("/api/users")
+      .query({ pageSize: 5 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.users).toHaveLength(usersOnPage(total, 1, 5));
+    expect(res.body.pagination).toEqual({ page: 1, pageSize: 5, total, totalPages: Math.ceil(total / 5) });
+  });
+
+  it("returns 400 for a pageSize below 1", async () => {
+    const token = await signupAndGetToken();
+
+    const res = await request(app)
+      .get("/api/users")
+      .query({ pageSize: 0 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.pageSize).toBeDefined();
+  });
+
+  it("returns 400 for a pageSize above the maximum", async () => {
+    const token = await signupAndGetToken();
+
+    const res = await request(app)
+      .get("/api/users")
+      .query({ pageSize: 101 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.pageSize).toBeDefined();
+  });
+
+  it("returns 400 for a non-numeric pageSize value", async () => {
+    const token = await signupAndGetToken();
+
+    const res = await request(app)
+      .get("/api/users")
+      .query({ pageSize: "abc" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.pageSize).toBeDefined();
+  });
+
   it("echoes the default sort and empty filters", async () => {
     const token = await signupAndGetToken();
 
@@ -169,6 +247,7 @@ describe("GET /api/users", () => {
   // ── Filtering ──
 
   it("filters by role", async () => {
+    const baseline = await countWhere({ role: "MANAGER" });
     const token = await signupAndGetToken();
     await seedDiverseUsers();
 
@@ -178,12 +257,13 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.pagination.total).toBe(1);
+    expect(res.body.pagination.total).toBe(baseline + 1); // + Carol
     expect(res.body.users.every((u: { role: string }) => u.role === "MANAGER")).toBe(true);
     expect(res.body.filters.role).toBe("MANAGER");
   });
 
   it("filters by department", async () => {
+    const baseline = await countWhere({ department: "Design" });
     const token = await signupAndGetToken();
     await seedDiverseUsers();
 
@@ -193,11 +273,12 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.pagination.total).toBe(1);
-    expect(res.body.users[0].department).toBe("Design");
+    expect(res.body.pagination.total).toBe(baseline + 1); // + Bob
+    expect(res.body.users.every((u: { department: string }) => u.department === "Design")).toBe(true);
   });
 
   it("filters by experienceLevel", async () => {
+    const baseline = await countWhere({ experienceLevel: "SENIOR" });
     const token = await signupAndGetToken();
     await seedDiverseUsers();
 
@@ -207,11 +288,12 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.pagination.total).toBe(1);
-    expect(res.body.users[0].experienceLevel).toBe("SENIOR");
+    expect(res.body.pagination.total).toBe(baseline + 1); // + Carol
+    expect(res.body.users.every((u: { experienceLevel: string }) => u.experienceLevel === "SENIOR")).toBe(true);
   });
 
   it("combines multiple filters", async () => {
+    const baseline = await countWhere({ role: "LEARNER", department: "Engineering" });
     const token = await signupAndGetToken();
     await seedDiverseUsers();
 
@@ -221,8 +303,8 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    // Both the token-owner (basePayload) and Alice match.
-    expect(res.body.pagination.total).toBe(2);
+    // + the token-owner (basePayload) and Alice.
+    expect(res.body.pagination.total).toBe(baseline + 2);
     expect(
       res.body.users.every(
         (u: { role: string; department: string }) => u.role === "LEARNER" && u.department === "Engineering",
@@ -231,6 +313,18 @@ describe("GET /api/users", () => {
   });
 
   it("searches case-insensitively across email and teamName", async () => {
+    const platformBaseline = await countWhere({
+      OR: [
+        { email: { contains: "platform", mode: "insensitive" } },
+        { teamName: { contains: "platform", mode: "insensitive" } },
+      ],
+    });
+    const aliceBaseline = await countWhere({
+      OR: [
+        { email: { contains: "alice", mode: "insensitive" } },
+        { teamName: { contains: "alice", mode: "insensitive" } },
+      ],
+    });
     const token = await signupAndGetToken();
     await seedDiverseUsers();
 
@@ -241,8 +335,8 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(byTeam.status).toBe(200);
-    expect(byTeam.body.pagination.total).toBe(1);
-    expect(byTeam.body.users[0].teamName).toBe("Platform Team");
+    expect(byTeam.body.pagination.total).toBe(platformBaseline + 1);
+    expect(byTeam.body.users.some((u: { teamName: string | null }) => u.teamName === "Platform Team")).toBe(true);
 
     // Matches Alice's email.
     const byEmail = await request(app)
@@ -251,8 +345,8 @@ describe("GET /api/users", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(byEmail.status).toBe(200);
-    expect(byEmail.body.pagination.total).toBe(1);
-    expect(byEmail.body.users[0].email).toBe(email("users-test-alice"));
+    expect(byEmail.body.pagination.total).toBe(aliceBaseline + 1);
+    expect(byEmail.body.users.some((u: { email: string }) => u.email === email("users-test-alice"))).toBe(true);
   });
 
   it("returns 400 for an invalid filter enum value", async () => {

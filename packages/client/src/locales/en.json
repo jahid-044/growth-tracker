@@ -10,6 +10,7 @@
     "appName": "Growth Tracker",
     "dashboard": "Dashboard",
     "profile": "Profile",
+    "users": "Users",
     "settings": "Settings",
     "logout": "Log out",
     "language": "Language"
@@ -42,6 +43,32 @@
   },
   "profile": {
     "title": "Profile"
+  },
+  "users": {
+    "title": "Users",
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "department": "Department",
+      "experienceLevel": "Experience level",
+      "teamName": "Team",
+      "createdAt": "Created"
+    },
+    "filters": {
+      "allRoles": "All roles",
+      "allDepartments": "All departments",
+      "allLevels": "All levels",
+      "search": "Search",
+      "searchPlaceholder": "Search by email or team",
+      "pageSize": "Rows per page"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{totalPages}}"
+    },
+    "empty": "No users found.",
+    "error": "Something went wrong loading users. Please try again."
   },
   "home": {
     "title": "Dashboard",
