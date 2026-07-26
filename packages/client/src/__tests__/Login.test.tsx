@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import Login from '@/pages/Login';
 
@@ -29,10 +29,12 @@ vi.mock('@/context/AuthContext', () => ({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function renderLogin(initialEntry: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/login']) {
+function renderLogin(initialEntry: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/en/login']) {
   return render(
     <MemoryRouter initialEntries={initialEntry}>
-      <Login />
+      <Routes>
+        <Route path="/:lang/login" element={<Login />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -76,20 +78,20 @@ describe('Login submission', () => {
 
     await vi.waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('test@company.com', 'Secret123!');
-      expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/en', { replace: true });
     });
   });
 
   it('redirects to the intended location after login', async () => {
     mockLogin.mockResolvedValue({ id: '1', email: 'test@company.com' });
     const user = userEvent.setup();
-    renderLogin([{ pathname: '/login', state: { from: { pathname: '/settings' } } }]);
+    renderLogin([{ pathname: '/en/login', state: { from: { pathname: '/en/settings' } } }]);
 
     await fillCredentials(user);
     await user.click(screen.getByTestId('submit-btn'));
 
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/settings', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/en/settings', { replace: true });
     });
   });
 
@@ -108,7 +110,7 @@ describe('Login submission', () => {
 
 describe('Post-signup banner', () => {
   it('shows the success banner when arriving from signup', () => {
-    renderLogin([{ pathname: '/login', state: { justSignedUp: true } }]);
+    renderLogin([{ pathname: '/en/login', state: { justSignedUp: true } }]);
     expect(screen.getByTestId('signup-success')).toBeInTheDocument();
   });
 

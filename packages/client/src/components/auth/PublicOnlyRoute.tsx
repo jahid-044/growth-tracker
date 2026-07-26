@@ -1,13 +1,14 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { AuthLoading } from "@/components/auth/AuthLoading";
 
 /** Gate for auth pages (/login, /signup). Redirects logged-in users to home. */
 function PublicOnlyRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { lang } = useParams<{ lang: string }>();
 
   if (isLoading) return <AuthLoading />;
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated) return <Navigate to={`/${lang}`} replace />;
   return <Outlet />;
 }
 

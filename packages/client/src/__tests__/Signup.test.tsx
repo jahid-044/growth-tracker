@@ -41,7 +41,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Signup from '@/pages/Signup';
 import { signup, checkEmailAvailable } from '@/lib/api';
 
@@ -81,8 +81,10 @@ function mockApiError(message = 'Email already in use') {
 
 function renderSignup() {
   return render(
-    <MemoryRouter>
-      <Signup />
+    <MemoryRouter initialEntries={['/en/signup']}>
+      <Routes>
+        <Route path="/:lang/signup" element={<Signup />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -517,7 +519,7 @@ describe('Form submission', () => {
     await user.click(screen.getByTestId('submit-btn'));
 
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login', { state: { justSignedUp: true } });
+      expect(mockNavigate).toHaveBeenCalledWith('/en/login', { state: { justSignedUp: true } });
     });
   });
 });

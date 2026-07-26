@@ -1,26 +1,36 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LayoutDashboard, Settings, LogOut, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/profile", label: "Profile", icon: User, end: false },
-  { to: "/settings", label: "Settings", icon: Settings, end: false },
-];
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 function Sidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
+  const { lang } = useParams<{ lang: string }>();
+
+  const navItems = [
+    { to: `/${lang}`, label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
+    { to: `/${lang}/profile`, label: t("nav.profile"), icon: User, end: false },
+    { to: `/${lang}/settings`, label: t("nav.settings"), icon: Settings, end: false },
+  ];
 
   async function handleLogout() {
     await logout();
-    navigate("/login", { replace: true });
+    navigate(`/${lang}/login`, { replace: true });
   }
 
   return (
-    <aside className="flex h-dvh w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="px-4 py-5 text-lg font-semibold">Growth Tracker</div>
+    <aside className="flex h-dvh w-56 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="flex items-center justify-between px-4 py-5">
+        <span className="text-lg font-semibold">{t("nav.appName")}</span>
+      </div>
+
+      <div className="px-4 pb-3">
+        <LanguageSwitcher />
+      </div>
 
       <nav className="flex-1 space-y-1 px-2">
         {navItems.map(({ to, label, icon: Icon, end }) => (
@@ -52,7 +62,7 @@ function Sidebar() {
           className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <LogOut className="size-4" />
-          Log out
+          {t("nav.logout")}
         </button>
       </div>
     </aside>

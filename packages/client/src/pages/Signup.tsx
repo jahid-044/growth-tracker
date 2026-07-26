@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm, useWatch, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signupSchema, type SignupFormValues, type SignupFieldValues } from "@/lib/signupSchema";
+import { useTranslation } from "react-i18next";
+import { buildSignupSchema, type SignupFormValues, type SignupFieldValues } from "@/lib/signupSchema";
 import { signup, type SignupPayload } from "@/lib/api";
 import { FormField, fieldClassName } from "@/components/ui/field";
 import { EmailField } from "@/components/signup/EmailField";
@@ -11,13 +12,19 @@ import { DepartmentField } from "@/components/signup/DepartmentField";
 import { BirthdatePicker } from "@/components/signup/BirthdatePicker";
 import { AddressList } from "@/components/signup/AddressList";
 import { ChipRadioGroup } from "@/components/signup/ChipRadioGroup";
+import { getExperienceLevelLabel } from "@/lib/enumLabels";
+import { translateServerError } from "@/lib/serverErrorMessages";
 
 function Signup() {
   const navigate = useNavigate();
+  const { lang } = useParams<{ lang: string }>();
+  const { t } = useTranslation();
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const schema = useMemo(() => buildSignupSchema(t), [t]);
+
   const form = useForm<SignupFieldValues, unknown, SignupFormValues>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(schema),
     mode: "onBlur",
     defaultValues: {
       email: "",
@@ -79,14 +86,14 @@ function Signup() {
       const { ok, data: responseData } = await signup(payload);
 
       if (!ok) {
-        setServerError(responseData.message ?? "Something went wrong. Please try again.");
+        setServerError(translateServerError(responseData.message, undefined, t));
         return;
       }
 
       // Signup no longer auto-authenticates — the user must log in explicitly.
-      navigate("/login", { state: { justSignedUp: true } });
+      navigate(`/${lang}/login`, { state: { justSignedUp: true } });
     } catch {
-      setServerError("Unable to reach the server. Please check your connection and try again.");
+      setServerError(t("auth.errors.networkUnreachable"));
     }
   }
 
@@ -97,24 +104,24 @@ function Signup() {
         onSubmit={handleSubmit(onSubmit)}
         className="w-full max-w-lg space-y-6 rounded-xl bg-white p-8 shadow-sm"
       >
-        <h1 className="text-2xl font-semibold text-neutral-900">Create account</h1>
+        <h1 className="text-2xl font-semibold text-neutral-900">{t("auth.signup.title")}</h1>
 
         <EmailField />
         <PasswordField />
 
         <ChipRadioGroup
-          label="Role"
+          label={t("common.role")}
           name="role"
           value={role}
           onChange={handleRoleChange}
           options={[
-            { value: "LEARNER", label: "Learner", testid: "role-learner" },
-            { value: "MANAGER", label: "Manager", testid: "role-manager" },
+            { value: "LEARNER", label: t("auth.signup.roleLearner"), testid: "role-learner" },
+            { value: "MANAGER", label: t("auth.signup.roleManager"), testid: "role-manager" },
           ]}
         />
 
         {role === "MANAGER" && (
-          <FormField label="Team name" htmlFor="teamName" error={errors.teamName?.message}>
+          <FormField label={t("auth.signup.teamName")} htmlFor="teamName" error={errors.teamName?.message}>
             <input
               id="teamName"
               data-testid="team-name-input"
@@ -127,18 +134,18 @@ function Signup() {
         <DepartmentField />
 
         <ChipRadioGroup
-          label="Experience level"
+          label={t("auth.signup.experienceLevel")}
           name="experienceLevel"
           value={experienceLevel}
           onChange={(value) => setValue("experienceLevel", value)}
           options={[
-            { value: "JUNIOR", label: "JUNIOR", testid: "experience-junior" },
-            { value: "MID", label: "MID", testid: "experience-mid" },
-            { value: "SENIOR", label: "SENIOR", testid: "experience-senior" },
+            { value: "JUNIOR", label: getExperienceLevelLabel(t, "JUNIOR"), testid: "experience-junior" },
+            { value: "MID", label: getExperienceLevelLabel(t, "MID"), testid: "experience-mid" },
+            { value: "SENIOR", label: getExperienceLevelLabel(t, "SENIOR"), testid: "experience-senior" },
           ]}
         />
 
-        <FormField label="Bio" htmlFor="bio" optional error={errors.bio?.message}>
+        <FormField label={t("auth.signup.bio")} htmlFor="bio" optional error={errors.bio?.message}>
           <textarea
             id="bio"
             data-testid="bio-input"
@@ -147,7 +154,7 @@ function Signup() {
             className={fieldClassName}
             {...register("bio")}
           />
-          <p className="text-right text-xs text-neutral-400">
+          <p className="text-end text-xs text-neutral-400">
             <span data-testid="bio-char-count">{bio.length} / 250</span>
           </p>
         </FormField>
@@ -168,7 +175,7 @@ function Signup() {
           disabled={isSubmitting}
           className="w-full rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "Creating account…" : "Create account"}
+          {isSubmitting ? t("auth.signup.submitting") : t("auth.signup.submit")}
         </button>
       </form>
     </FormProvider>

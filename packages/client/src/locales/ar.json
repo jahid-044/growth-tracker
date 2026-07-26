@@ -1,0 +1,139 @@
+{
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "department": "القسم",
+    "role": "الدور"
+  },
+  "nav": {
+    "appName": "Growth Tracker",
+    "dashboard": "لوحة التحكم",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج",
+    "language": "اللغة"
+  },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ تسجيل الدخول…",
+      "noAccount": "ليس لديك حساب؟",
+      "signUpLink": "إنشاء حساب",
+      "signupSuccess": "تم إنشاء الحساب. يرجى تسجيل الدخول للمتابعة."
+    },
+    "signup": {
+      "title": "إنشاء حساب",
+      "roleLearner": "متعلم",
+      "roleManager": "مدير",
+      "teamName": "اسم الفريق",
+      "experienceLevel": "مستوى الخبرة",
+      "bio": "نبذة",
+      "submit": "إنشاء حساب",
+      "submitting": "جارٍ إنشاء الحساب…"
+    },
+    "errors": {
+      "invalidCredentials": "بيانات اعتماد غير صحيحة",
+      "emailInUse": "البريد الإلكتروني مستخدم بالفعل",
+      "genericServer": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "networkUnreachable": "تعذر الوصول إلى الخادم. يرجى التحقق من اتصالك والمحاولة مرة أخرى."
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي"
+  },
+  "home": {
+    "title": "لوحة التحكم",
+    "signedInAs": "مسجل الدخول باسم {{email}}"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "tabs": {
+      "account": "الحساب",
+      "security": "الأمان"
+    },
+    "account": {
+      "title": "الحساب",
+      "placeholder": "ستظهر إعدادات الحساب هنا."
+    },
+    "security": {
+      "title": "الأمان",
+      "placeholder": "ستظهر إعدادات الأمان هنا."
+    }
+  },
+  "notFound": {
+    "title": "الصفحة غير موجودة",
+    "body": "الصفحة التي تبحث عنها غير موجودة. تحقق من الرابط وحاول مرة أخرى، أو عد إلى لوحة التحكم.",
+    "backToDashboard": "العودة إلى لوحة التحكم"
+  },
+  "form": {
+    "addresses": {
+      "label": "العناوين",
+      "optional": "(اختياري)",
+      "newAddress": "عنوان جديد",
+      "add": "+ إضافة عنوان",
+      "remove": "إزالة",
+      "labelField": "التسمية",
+      "labelPlaceholder": "التسمية (مثال: المنزل)",
+      "street1": "عنوان الشارع",
+      "street2Placeholder": "شقة، جناح، إلخ (اختياري)",
+      "city": "المدينة",
+      "zip": "الرمز البريدي",
+      "zipPlaceholder": "الرمز البريدي"
+    },
+    "birthdate": {
+      "label": "تاريخ الميلاد",
+      "year": "السنة",
+      "month": "الشهر",
+      "day": "اليوم"
+    },
+    "passwordRules": {
+      "length": "8 أحرف على الأقل",
+      "upper": "حرف كبير واحد على الأقل",
+      "special": "رمز خاص واحد على الأقل"
+    },
+    "departmentPlaceholder": "اختر قسمًا"
+  },
+  "validation": {
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "emailInvalid": "يجب أن يكون بريدًا إلكترونيًا صالحًا",
+    "emailInUse": "البريد الإلكتروني مستخدم بالفعل",
+    "passwordMinLength": "يجب أن تتكون من 8 أحرف على الأقل",
+    "passwordUpper": "يجب أن تحتوي على حرف كبير واحد على الأقل",
+    "passwordSpecial": "يجب أن تحتوي على رمز خاص واحد على الأقل",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "departmentRequired": "القسم مطلوب",
+    "teamNameRequired": "اسم الفريق مطلوب للمديرين",
+    "yearRequired": "السنة مطلوبة",
+    "monthRequired": "الشهر مطلوب",
+    "dayRequired": "اليوم مطلوب",
+    "birthdateInvalid": "يرجى اختيار تاريخ صالح",
+    "birthdateFuture": "لا يمكن أن يكون تاريخ الميلاد في المستقبل",
+    "addressLabelRequired": "التسمية مطلوبة",
+    "addressStreetRequired": "عنوان الشارع مطلوب",
+    "addressCityRequired": "المدينة مطلوبة",
+    "addressZipRequired": "الرمز البريدي مطلوب",
+    "addressZipNumeric": "يجب أن يتكون الرمز البريدي من أرقام فقط"
+  },
+  "enums": {
+    "role": {
+      "LEARNER": "متعلم",
+      "MANAGER": "مدير"
+    },
+    "experienceLevel": {
+      "JUNIOR": "مبتدئ",
+      "MID": "متوسط",
+      "SENIOR": "متقدم"
+    },
+    "department": {
+      "Engineering": "الهندسة",
+      "Product": "المنتج",
+      "Design": "التصميم",
+      "Marketing": "التسويق",
+      "Operations": "العمليات",
+      "HR": "الموارد البشرية",
+      "Other": "أخرى"
+    }
+  }
+}

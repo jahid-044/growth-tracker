@@ -1,5 +1,7 @@
 import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { DEPARTMENTS } from "@/lib/constants";
+import { getDepartmentLabel } from "@/lib/enumLabels";
 import { FormField, fieldClassName } from "@/components/ui/field";
 import { useFocusGuard } from "@/hooks/useFocusGuard";
 import type { SignupFieldValues, SignupFormValues } from "@/lib/signupSchema";
@@ -9,13 +11,14 @@ export function DepartmentField() {
     register,
     formState: { errors },
   } = useFormContext<SignupFieldValues, unknown, SignupFormValues>();
+  const { t } = useTranslation();
 
   const guard = useFocusGuard();
   const { onBlur: rhfBlur, ...rest } = register("department");
 
   return (
     <FormField
-      label="Department"
+      label={t("common.department")}
       htmlFor="department"
       error={!guard.focused ? errors.department?.message : undefined}
     >
@@ -31,11 +34,11 @@ export function DepartmentField() {
         }}
       >
         <option value="" disabled>
-          Select a department
+          {t("form.departmentPlaceholder")}
         </option>
         {DEPARTMENTS.map((d) => (
           <option key={d} value={d}>
-            {d}
+            {getDepartmentLabel(t, d)}
           </option>
         ))}
       </select>
