@@ -9,6 +9,7 @@ import {
   type Updater,
 } from "@tanstack/react-table";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { UsersPagination } from "@/components/users/UsersPagination";
 import { listUsers } from "@/lib/users";
 import { getUsersColumns } from "@/lib/usersColumns";
 import { DEPARTMENTS } from "@/lib/constants";
@@ -333,30 +334,12 @@ function Users() {
         </div>
       )}
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-neutral-600">
-          <button
-            type="button"
-            data-testid="users-prev-page"
-            className="rounded-md border border-neutral-300 px-3 py-1.5 disabled:opacity-40"
-            onClick={() => updateParams({ page: page - 1 <= 1 ? null : page - 1 })}
-            disabled={pagination.page <= 1}
-          >
-            {t("users.pagination.prev")}
-          </button>
-          <span>
-            {t("users.pagination.pageOf", { page: pagination.page, totalPages: pagination.totalPages })}
-          </span>
-          <button
-            type="button"
-            data-testid="users-next-page"
-            className="rounded-md border border-neutral-300 px-3 py-1.5 disabled:opacity-40"
-            onClick={() => updateParams({ page: page + 1 })}
-            disabled={pagination.page >= pagination.totalPages}
-          >
-            {t("users.pagination.next")}
-          </button>
-        </div>
+      {pagination && (
+        <UsersPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={(p) => updateParams({ page: p <= 1 ? null : p })}
+        />
       )}
     </div>
   );

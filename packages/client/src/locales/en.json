@@ -63,9 +63,9 @@
       "pageSize": "Rows per page"
     },
     "pagination": {
+      "label": "Pagination",
       "prev": "Previous",
-      "next": "Next",
-      "pageOf": "Page {{page}} of {{totalPages}}"
+      "next": "Next"
     },
     "empty": "No users found.",
     "error": "Something went wrong loading users. Please try again."

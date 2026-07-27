@@ -4,7 +4,7 @@
  * Required data-testid attributes: users-role-select, users-department-select,
  * users-experience-select, users-search-input, users-page-size-select,
  * users-table, users-empty, users-error, users-loading, users-prev-page,
- * users-next-page.
+ * users-next-page, users-page-{n} (numbered pagination buttons).
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -209,5 +209,37 @@ describe('Pagination', () => {
 
     await screen.findByTestId('users-table');
     expect(screen.getByTestId('users-prev-page')).toBeDisabled();
+  });
+
+  it('jumps directly to a clicked page number', async () => {
+    mockListUsers.mockResolvedValue(
+      makeResponse({ pagination: { page: 1, pageSize: 10, total: 110, totalPages: 11 } }),
+    );
+    const user = userEvent.setup();
+    renderUsers();
+
+    await screen.findByTestId('users-table');
+    expect(screen.getByTestId('users-page-1')).toHaveAttribute('aria-current', 'page');
+
+    mockListUsers.mockClear();
+    mockListUsers.mockResolvedValue(
+      makeResponse({ pagination: { page: 3, pageSize: 10, total: 110, totalPages: 11 } }),
+    );
+
+    await user.click(screen.getByTestId('users-page-3'));
+
+    await vi.waitFor(() => {
+      expect(mockListUsers).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }));
+      expect(currentParams().get('page')).toBe('3');
+    });
+  });
+
+  it('does not render page numbers when everything fits on one page', async () => {
+    mockListUsers.mockResolvedValue(makeResponse());
+    renderUsers();
+
+    await screen.findByTestId('users-table');
+    expect(screen.queryByTestId('users-prev-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('users-page-1')).not.toBeInTheDocument();
   });
 });
