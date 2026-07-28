@@ -9,6 +9,14 @@ export const swaggerOptions: Options = {
         bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       },
       schemas: {
+        Error: {
+          type: "object",
+          description: "Error responses carry a stable `code` plus a `message` localized per the request's Accept-Language header (en/ar supported, defaults to en).",
+          properties: {
+            code:    { type: "string", example: "INVALID_CREDENTIALS" },
+            message: { type: "string", example: "Invalid credentials" },
+          },
+        },
         AddressInput: {
           type: "object",
           required: ["label", "street1", "city", "zipCode"],
@@ -118,8 +126,14 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "400": { description: "Validation error" },
-            "409": { description: "Email already in use" },
+            "400": {
+              description: "Validation error",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
+            "409": {
+              description: "Email already in use",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },
@@ -157,8 +171,14 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "400": { description: "Validation error" },
-            "401": { description: "Invalid credentials" },
+            "400": {
+              description: "Validation error",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
+            "401": {
+              description: "Invalid credentials",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },
@@ -171,7 +191,13 @@ export const swaggerOptions: Options = {
               description: "Logged out",
               content: {
                 "application/json": {
-                  schema: { type: "object", properties: { message: { type: "string", example: "Logged out" } } },
+                  schema: {
+                    type: "object",
+                    properties: {
+                      code:    { type: "string", example: "LOGGED_OUT" },
+                      message: { type: "string", example: "Logged out" },
+                    },
+                  },
                 },
               },
             },
@@ -191,7 +217,10 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "401": { description: "Invalid or expired refresh token" },
+            "401": {
+              description: "Invalid or expired refresh token",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },
@@ -212,8 +241,14 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "401": { description: "Unauthorized" },
-            "404": { description: "User not found" },
+            "401": {
+              description: "Unauthorized",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
+            "404": {
+              description: "User not found",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },
@@ -334,8 +369,14 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "400": { description: "Invalid query parameter (page, filter enum, sortBy, or sortOrder)" },
-            "401": { description: "Unauthorized" },
+            "400": {
+              description: "Invalid query parameter (page, filter enum, sortBy, or sortOrder)",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
+            "401": {
+              description: "Unauthorized",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },
@@ -364,7 +405,10 @@ export const swaggerOptions: Options = {
                 },
               },
             },
-            "400": { description: "Missing or invalid email query parameter" },
+            "400": {
+              description: "Missing or invalid email query parameter",
+              content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
           },
         },
       },

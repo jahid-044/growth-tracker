@@ -18,6 +18,7 @@ export interface SignupResult {
   ok: boolean;
   data: {
     accessToken?: string;
+    code?: string;
     message?: string;
     [key: string]: unknown;
   };

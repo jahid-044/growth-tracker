@@ -10,6 +10,7 @@ import {
   type Updater,
 } from "@tanstack/react-table";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import axios from "axios";
 import { UsersPagination } from "@/components/users/UsersPagination";
 import { listUsers } from "@/lib/users";
 import { getUsersColumns } from "@/lib/usersColumns";
@@ -261,7 +262,7 @@ function Users() {
 
       {error && (
         <p data-testid="users-error" className="text-sm text-red-600">
-          {t("users.error")}
+          {(axios.isAxiosError(error) && error.response?.data?.message) || t("users.error")}
         </p>
       )}
 

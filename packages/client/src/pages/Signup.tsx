@@ -86,7 +86,7 @@ function Signup() {
       const { ok, data: responseData } = await signup(payload);
 
       if (!ok) {
-        setServerError(translateServerError(responseData.message, undefined, t));
+        setServerError(translateServerError(responseData, t));
         return;
       }
 

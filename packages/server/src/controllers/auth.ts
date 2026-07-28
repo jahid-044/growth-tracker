@@ -6,6 +6,7 @@ import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 import { config } from "../config";
 import { AuthPayload } from "../middleware/requireAuth";
+import { localizeError } from "../lib/errorMessages";
 
 const prisma = new PrismaClient();
 
@@ -65,7 +66,11 @@ const signupSchema = z
 export async function signup(req: Request, res: Response): Promise<void> {
   const result = signupSchema.safeParse(req.body);
   if (!result.success) {
-    res.status(400).json({ message: "Validation error", errors: result.error.flatten().fieldErrors });
+    res.status(400).json({
+      code: "VALIDATION_ERROR",
+      message: localizeError("VALIDATION_ERROR", req.locale),
+      errors: result.error.flatten().fieldErrors,
+    });
     return;
   }
 
@@ -73,7 +78,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    res.status(409).json({ message: "Email already in use" });
+    res.status(409).json({ code: "EMAIL_IN_USE", message: localizeError("EMAIL_IN_USE", req.locale) });
     return;
   }
 
@@ -123,7 +128,11 @@ export async function signup(req: Request, res: Response): Promise<void> {
 export async function login(req: Request, res: Response): Promise<void> {
   const result = credentialsSchema.safeParse(req.body);
   if (!result.success) {
-    res.status(400).json({ message: "Validation error", errors: result.error.flatten().fieldErrors });
+    res.status(400).json({
+      code: "VALIDATION_ERROR",
+      message: localizeError("VALIDATION_ERROR", req.locale),
+      errors: result.error.flatten().fieldErrors,
+    });
     return;
   }
 
@@ -131,13 +140,13 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ code: "INVALID_CREDENTIALS", message: localizeError("INVALID_CREDENTIALS", req.locale) });
     return;
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ code: "INVALID_CREDENTIALS", message: localizeError("INVALID_CREDENTIALS", req.locale) });
     return;
   }
 
@@ -163,14 +172,14 @@ export async function logout(req: Request, res: Response): Promise<void> {
   }
 
   res.clearCookie(REFRESH_COOKIE);
-  res.json({ message: "Logged out" });
+  res.json({ code: "LOGGED_OUT", message: localizeError("LOGGED_OUT", req.locale) });
 }
 
 export async function refresh(req: Request, res: Response): Promise<void> {
   const token = req.cookies[REFRESH_COOKIE] as string | undefined;
 
   if (!token) {
-    res.status(401).json({ message: "No refresh token" });
+    res.status(401).json({ code: "NO_REFRESH_TOKEN", message: localizeError("NO_REFRESH_TOKEN", req.locale) });
     return;
   }
 
@@ -178,13 +187,19 @@ export async function refresh(req: Request, res: Response): Promise<void> {
   try {
     payload = jwt.verify(token, config.JWT_REFRESH_SECRET) as AuthPayload;
   } catch {
-    res.status(401).json({ message: "Invalid or expired refresh token" });
+    res.status(401).json({
+      code: "INVALID_REFRESH_TOKEN",
+      message: localizeError("INVALID_REFRESH_TOKEN", req.locale),
+    });
     return;
   }
 
   const stored = await prisma.refreshToken.findUnique({ where: { token } });
   if (!stored || stored.expiresAt < new Date()) {
-    res.status(401).json({ message: "Refresh token revoked or expired" });
+    res.status(401).json({
+      code: "REFRESH_TOKEN_REVOKED",
+      message: localizeError("REFRESH_TOKEN_REVOKED", req.locale),
+    });
     return;
   }
 
@@ -223,7 +238,7 @@ export async function me(req: Request, res: Response): Promise<void> {
   });
 
   if (!user) {
-    res.status(404).json({ message: "User not found" });
+    res.status(404).json({ code: "USER_NOT_FOUND", message: localizeError("USER_NOT_FOUND", req.locale) });
     return;
   }
 
@@ -234,13 +249,16 @@ export async function checkEmail(req: Request, res: Response): Promise<void> {
   const email = req.query.email as string | undefined;
 
   if (!email) {
-    res.status(400).json({ message: "email query parameter is required" });
+    res.status(400).json({
+      code: "EMAIL_QUERY_REQUIRED",
+      message: localizeError("EMAIL_QUERY_REQUIRED", req.locale),
+    });
     return;
   }
 
   const parsed = z.string().email().safeParse(email);
   if (!parsed.success) {
-    res.status(400).json({ message: "Invalid email address" });
+    res.status(400).json({ code: "INVALID_EMAIL", message: localizeError("INVALID_EMAIL", req.locale) });
     return;
   }
 

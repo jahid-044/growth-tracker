@@ -44,10 +44,10 @@ async function fillCredentials(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByTestId('password-input'), 'Secret123!');
 }
 
-function make401(message = 'Invalid credentials') {
+function make401(message = 'Invalid credentials', code = 'INVALID_CREDENTIALS') {
   return new AxiosError(message, undefined, undefined, undefined, {
     status: 401,
-    data: { message },
+    data: { code, message },
   } as never);
 }
 
@@ -105,6 +105,32 @@ describe('Login submission', () => {
 
     expect(await screen.findByTestId('error-message')).toHaveTextContent('Invalid credentials');
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('displays the server-localized message verbatim, in whatever language the server sent', async () => {
+    mockLogin.mockRejectedValue(make401('بيانات اعتماد غير صحيحة', 'INVALID_CREDENTIALS'));
+    const user = userEvent.setup();
+    renderLogin();
+
+    await fillCredentials(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    // The client holds no translation mapping of its own — it trusts the
+    // server's already-localized message as-is.
+    expect(await screen.findByTestId('error-message')).toHaveTextContent('بيانات اعتماد غير صحيحة');
+  });
+
+  it('falls back to a generic message when the response has no message at all', async () => {
+    mockLogin.mockRejectedValue(
+      new AxiosError('Unauthorized', undefined, undefined, undefined, { status: 401, data: {} } as never),
+    );
+    const user = userEvent.setup();
+    renderLogin();
+
+    await fillCredentials(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    expect(await screen.findByTestId('error-message')).toHaveTextContent('Something went wrong. Please try again.');
   });
 });
 

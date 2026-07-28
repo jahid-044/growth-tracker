@@ -52,8 +52,8 @@ function Login() {
       navigate(from, { replace: true });
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
-        const message = (err.response.data as { message?: string })?.message;
-        setServerError(translateServerError(message, err.response.status, t));
+        const payload = err.response.data as { code?: string; message?: string } | undefined;
+        setServerError(translateServerError(payload, t));
         return;
       }
       setServerError(t("auth.errors.networkUnreachable"));

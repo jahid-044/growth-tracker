@@ -72,9 +72,9 @@ function mockApiSuccess() {
   });
 }
 
-function mockApiError(message = 'Email already in use') {
+function mockApiError(message = 'Email already in use', code = 'EMAIL_IN_USE') {
   mockedCheckEmail.mockResolvedValue(true);
-  mockedSignup.mockResolvedValue({ ok: false, data: { message } });
+  mockedSignup.mockResolvedValue({ ok: false, data: { code, message } });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -508,6 +508,29 @@ describe('Form submission', () => {
     await user.click(screen.getByTestId('submit-btn'));
 
     expect(await screen.findByTestId('error-message')).toHaveTextContent('Email already in use');
+  });
+
+  it('displays the server-localized message verbatim for any error code', async () => {
+    mockApiError('Signup is temporarily disabled', 'SIGNUP_DISABLED');
+    const user = userEvent.setup();
+    renderSignup();
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    expect(await screen.findByTestId('error-message')).toHaveTextContent('Signup is temporarily disabled');
+  });
+
+  it('falls back to a generic message when the response has no message at all', async () => {
+    mockedCheckEmail.mockResolvedValue(true);
+    mockedSignup.mockResolvedValue({ ok: false, data: {} });
+    const user = userEvent.setup();
+    renderSignup();
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByTestId('submit-btn'));
+
+    expect(await screen.findByTestId('error-message')).toHaveTextContent('Something went wrong. Please try again.');
   });
 
   it('navigates to /login on successful signup (user must log in)', async () => {

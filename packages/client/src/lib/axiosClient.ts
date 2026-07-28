@@ -8,6 +8,7 @@ import {
   isAccessTokenExpired,
   notifyAuthFailure,
 } from "@/lib/tokenStore";
+import i18n from "@/lib/i18n";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -32,6 +33,10 @@ export const api = axios.create({
 // interceptor would otherwise incur. The refresh is deduped via `refreshPromise`
 // below, so concurrent expired requests share a single /refresh call.
 api.interceptors.request.use(async (config: AuthRequestConfig) => {
+  // Sent on every request (including login/refresh, which skip the auth dance
+  // below) so the server can localize error messages to the current UI language.
+  config.headers["Accept-Language"] = i18n.language;
+
   if (config._skipAuthRefresh) return config;
   let token = getAccessToken();
   if (token && isAccessTokenExpired(token)) {

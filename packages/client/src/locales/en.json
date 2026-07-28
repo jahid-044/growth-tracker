@@ -35,8 +35,6 @@
       "submitting": "Creating account…"
     },
     "errors": {
-      "invalidCredentials": "Invalid credentials",
-      "emailInUse": "Email already in use",
       "genericServer": "Something went wrong. Please try again.",
       "networkUnreachable": "Unable to reach the server. Please check your connection and try again."
     }

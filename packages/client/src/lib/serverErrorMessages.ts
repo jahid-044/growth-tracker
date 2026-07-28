@@ -1,24 +1,18 @@
 import type { TFunction } from "i18next";
 
-const KNOWN_MESSAGES: Record<string, string> = {
-  "Invalid credentials": "auth.errors.invalidCredentials",
-  "Email already in use": "auth.errors.emailInUse",
-};
+export interface ServerErrorPayload {
+  code?: string;
+  message?: string;
+}
 
 /**
- * Maps a raw (English, server-generated) error message to a translated string.
- * Unrecognized messages fall back to a generic translated message (or, for a
- * 401 with no message at all, to "Invalid credentials") rather than displaying
- * untranslated server text.
+ * Resolves a display string for a server error response. The server already
+ * localizes `message` per the request's Accept-Language header, so it's used
+ * verbatim — the client holds no translation mapping of its own. Only a
+ * response with no message at all (or a true network failure, handled by the
+ * caller) falls back to a generic translated string.
  */
-export function translateServerError(
-  message: string | undefined,
-  status: number | undefined,
-  t: TFunction
-): string {
-  if (message && message in KNOWN_MESSAGES) {
-    return t(KNOWN_MESSAGES[message]);
-  }
-  if (status === 401) return t("auth.errors.invalidCredentials");
+export function translateServerError(payload: ServerErrorPayload | undefined, t: TFunction): string {
+  if (payload?.message) return payload.message;
   return t("auth.errors.genericServer");
 }

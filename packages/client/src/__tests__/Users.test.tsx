@@ -12,6 +12,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import Users from '@/pages/Users';
 import type { UsersListResponse, UsersQuery } from '@/types/users';
 
@@ -96,6 +97,17 @@ describe('Rendering users', () => {
     renderUsers();
 
     expect(await screen.findByTestId('users-error')).toBeInTheDocument();
+  });
+
+  it('shows the server-provided (localized) message when the API responds with one', async () => {
+    const axiosError = new AxiosError('Bad request', undefined, undefined, undefined, {
+      status: 400,
+      data: { code: 'VALIDATION_ERROR', message: 'خطأ في التحقق من الصحة' },
+    } as never);
+    mockListUsers.mockRejectedValue(axiosError);
+    renderUsers();
+
+    expect(await screen.findByTestId('users-error')).toHaveTextContent('خطأ في التحقق من الصحة');
   });
 });
 

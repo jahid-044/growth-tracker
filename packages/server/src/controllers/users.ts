@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma, PrismaClient, Role, Department, ExperienceLevel } from "@prisma/client";
 import { z } from "zod";
+import { localizeError } from "../lib/errorMessages";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +27,11 @@ const listUsersQuerySchema = z.object({
 export async function listUsers(req: Request, res: Response): Promise<void> {
   const result = listUsersQuerySchema.safeParse(req.query);
   if (!result.success) {
-    res.status(400).json({ message: "Validation error", errors: result.error.flatten().fieldErrors });
+    res.status(400).json({
+      code: "VALIDATION_ERROR",
+      message: localizeError("VALIDATION_ERROR", req.locale),
+      errors: result.error.flatten().fieldErrors,
+    });
     return;
   }
 
