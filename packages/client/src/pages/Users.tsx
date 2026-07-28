@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -16,12 +17,7 @@ import { DEPARTMENTS } from "@/lib/constants";
 import { getRoleLabel, getDepartmentLabel, getExperienceLevelLabel } from "@/lib/enumLabels";
 import { fieldClassName, labelClassName } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
-import type {
-  UserExperienceLevel,
-  UserRole,
-  UsersListResponse,
-  UsersSortBy,
-} from "@/types/users";
+import type { UserExperienceLevel, UserRole, UsersSortBy } from "@/types/users";
 
 const ROLES: UserRole[] = ["LEARNER", "MANAGER"];
 const EXPERIENCE_LEVELS: UserExperienceLevel[] = ["JUNIOR", "MID", "SENIOR"];
@@ -80,10 +76,6 @@ function Users() {
     setSearchInput(search);
   }, [search]);
 
-  const [data, setData] = useState<UsersListResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   /** Applies a patch of params to the URL (in place, replacing history so filtering doesn't spam back/forward). */
   const updateParams = useCallback(
     (patch: ParamPatch, { resetPage = false }: { resetPage?: boolean } = {}) => {
@@ -116,35 +108,22 @@ function Users() {
     return () => clearTimeout(handle);
   }, [searchInput, search, updateParams]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
+  const usersQuery = {
+    page,
+    pageSize,
+    role: role || undefined,
+    department: department || undefined,
+    experienceLevel: experienceLevel || undefined,
+    search: search || undefined,
+    sortBy,
+    sortOrder,
+  };
 
-    listUsers({
-      page,
-      pageSize,
-      role: role || undefined,
-      department: department || undefined,
-      experienceLevel: experienceLevel || undefined,
-      search: search || undefined,
-      sortBy,
-      sortOrder,
-    })
-      .then((res) => {
-        if (!cancelled) setData(res);
-      })
-      .catch(() => {
-        if (!cancelled) setError(t("users.error"));
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [page, pageSize, role, department, experienceLevel, search, sortBy, sortOrder, t]);
+  const { data, isPending, isFetching, error } = useQuery({
+    queryKey: ["users", usersQuery],
+    queryFn: ({ signal }) => listUsers(usersQuery, signal),
+    placeholderData: keepPreviousData,
+  });
 
   const columns = useMemo(() => getUsersColumns(t), [t]);
 
@@ -282,11 +261,11 @@ function Users() {
 
       {error && (
         <p data-testid="users-error" className="text-sm text-red-600">
-          {error}
+          {t("users.error")}
         </p>
       )}
 
-      {isLoading && !data ? (
+      {isPending ? (
         <p data-testid="users-loading" className="text-sm text-neutral-500">
           {t("common.loading")}
         </p>
@@ -295,7 +274,7 @@ function Users() {
           {t("users.empty")}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", isFetching && "opacity-60")}>
           <table data-testid="users-table" className="w-full text-sm">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (

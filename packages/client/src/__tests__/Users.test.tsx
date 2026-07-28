@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Users from '@/pages/Users';
 import type { UsersListResponse, UsersQuery } from '@/types/users';
 
@@ -53,13 +54,20 @@ function currentParams(): URLSearchParams {
 }
 
 function renderUsers(initialEntries: string[] = ['/en/users']) {
+  // A fresh client per render avoids cache leaking between tests; retry:false
+  // keeps the "fetch fails" test from hanging through React Query's backoff.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <LocationProbe />
-      <Routes>
-        <Route path="/:lang/users" element={<Users />} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <LocationProbe />
+        <Routes>
+          <Route path="/:lang/users" element={<Users />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
