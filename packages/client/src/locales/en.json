@@ -124,7 +124,7 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Must be a valid email",
     "emailInUse": "Email is already in use",
-    "passwordMinLength": "Must be at least 8 characters",
+    "passwordMinLength": "Must be at least {{length}} characters",
     "passwordUpper": "Must contain at least one capital letter",
     "passwordSpecial": "Must contain at least one special character",
     "passwordRequired": "Password is required",
