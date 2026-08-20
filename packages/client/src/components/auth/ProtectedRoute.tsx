@@ -1,10 +1,11 @@
 import { Navigate, Outlet, useLocation, useParams } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore } from "@/store/authStore";
 import { AuthLoading } from "@/components/auth/AuthLoading";
 
 /** Gate for private routes. Redirects unauthenticated users to /login. */
 function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const isAuthenticated = useAuthStore((s) => s.user !== null);
   const location = useLocation();
   const { lang } = useParams<{ lang: string }>();
 

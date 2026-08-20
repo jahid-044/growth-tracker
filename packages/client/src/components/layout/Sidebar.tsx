@@ -1,13 +1,14 @@
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LayoutDashboard, Settings, LogOut, User, Users } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { logout } from "@/lib/authActions";
+import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 function Sidebar() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const email = useAuthStore((s) => s.user?.email);
   const { t } = useTranslation();
   const { lang } = useParams<{ lang: string }>();
 
@@ -55,7 +56,7 @@ function Sidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-3">
-        <p className="truncate px-1 pb-2 text-xs text-sidebar-foreground/60">{user?.email}</p>
+        <p className="truncate px-1 pb-2 text-xs text-sidebar-foreground/60">{email}</p>
         <button
           type="button"
           data-testid="logout-btn"

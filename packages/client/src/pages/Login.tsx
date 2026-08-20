@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { buildLoginSchema, type LoginFormValues } from "@/lib/loginSchema";
-import { useAuth } from "@/context/AuthContext";
+import { login } from "@/lib/authActions";
 import { FormField, fieldClassName } from "@/components/ui/field";
 import { useFocusGuard } from "@/hooks/useFocusGuard";
 import { translateServerError } from "@/lib/serverErrorMessages";
@@ -19,7 +19,6 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { lang } = useParams<{ lang: string }>();
-  const { login } = useAuth();
   const { t } = useTranslation();
   const [serverError, setServerError] = useState<string | null>(null);
 

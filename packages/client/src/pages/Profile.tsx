@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore } from "@/store/authStore";
 import { getRoleLabel, getDepartmentLabel } from "@/lib/enumLabels";
 
 function Profile() {
-  const { user } = useAuth();
+  const user = useAuthStore((s) => s.user);
   const { t } = useTranslation();
 
   return (

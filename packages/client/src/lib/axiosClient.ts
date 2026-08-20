@@ -2,12 +2,8 @@ import axios, {
   AxiosError,
   type InternalAxiosRequestConfig,
 } from "axios";
-import {
-  getAccessToken,
-  setAccessToken,
-  isAccessTokenExpired,
-  notifyAuthFailure,
-} from "@/lib/tokenStore";
+import { isAccessTokenExpired } from "@/lib/jwt";
+import { useAuthStore } from "@/store/authStore";
 import i18n from "@/lib/i18n";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -38,9 +34,9 @@ api.interceptors.request.use(async (config: AuthRequestConfig) => {
   config.headers["Accept-Language"] = i18n.language;
 
   if (config._skipAuthRefresh) return config;
-  let token = getAccessToken();
+  let token = useAuthStore.getState().accessToken;
   if (token && isAccessTokenExpired(token)) {
-    // On failure `refreshAccessToken` clears auth + notifies, then rethrows —
+    // On failure `refreshAccessToken` clears the session, then rethrows —
     // rejecting here fails the request fast instead of firing a doomed 401.
     token = await refreshAccessToken();
   }
@@ -61,12 +57,13 @@ function refreshAccessToken(): Promise<string | null> {
       _skipAuthRefresh: true,
     } as AuthRequestConfig)
     .then(({ data }) => {
-      setAccessToken(data.accessToken);
+      useAuthStore.getState().setAccessToken(data.accessToken);
       return data.accessToken;
     })
     .catch((refreshError) => {
-      setAccessToken(null);
-      notifyAuthFailure();
+      // Auth can no longer be recovered: drop the token *and* the user so the
+      // route guards redirect to /login.
+      useAuthStore.getState().clearSession();
       throw refreshError;
     })
     .finally(() => {

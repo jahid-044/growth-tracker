@@ -23,8 +23,8 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 const mockLogin = vi.fn();
 
-vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ login: mockLogin }),
+vi.mock('@/lib/authActions', () => ({
+  login: (...args: unknown[]) => mockLogin(...args),
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
